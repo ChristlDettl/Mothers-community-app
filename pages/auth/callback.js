@@ -7,14 +7,13 @@ export default function Callback() {
 
   useEffect(() => {
     async function handleAuth() {
-      // 1. Tausche den Code aus der URL gegen eine Session ein
+      // Tausche Code/Token aus der URL gegen Session
       const { error } = await supabase.auth.exchangeCodeForSession(window.location.href)
 
       if (error) {
         console.error('Auth error:', error.message)
-        router.push('/?error=auth')
+        router.push('/')
       } else {
-        // 2. Jetzt ist die Session gesetzt → weiter ins Dashboard
         router.push('/dashboard')
       }
     }
@@ -24,5 +23,3 @@ export default function Callback() {
 
   return <p>Login wird verarbeitet...</p>
 }
-
-
