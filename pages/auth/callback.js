@@ -1,43 +1,28 @@
-
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabaseClient'
 
-export default function AuthCallback() {
+export default function Callback() {
   const router = useRouter()
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error('Auth error:', error.message)
-          alert('Authentifizierungsfehler: ' + error.message)
-          router.push('/')
-          return
-        }
+    async function handleAuth() {
+      // 1. Tausche den Code aus der URL gegen eine Session ein
+      const { error } = await supabase.auth.exchangeCodeForSession(window.location.href)
 
-        if (data.session) {
-          // User is authenticated, redirect to dashboard or main app
-          router.push('/dashboard')
-        } else {
-          // No session found, redirect back to login
-          router.push('/')
-        }
-      } catch (error) {
-        console.error('Unexpected error:', error)
-        router.push('/')
+      if (error) {
+        console.error('Auth error:', error.message)
+        router.push('/?error=auth')
+      } else {
+        // 2. Jetzt ist die Session gesetzt → weiter ins Dashboard
+        router.push('/dashboard')
       }
     }
 
-    handleAuthCallback()
+    handleAuth()
   }, [router])
 
-  return (
-    <div style={{ padding: 20, textAlign: 'center' }}>
-      <h2>Authentifizierung läuft...</h2>
-      <p>Du wirst weitergeleitet...</p>
-    </div>
-  )
+  return <p>Login wird verarbeitet...</p>
 }
+
+
