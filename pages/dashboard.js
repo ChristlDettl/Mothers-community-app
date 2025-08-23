@@ -12,7 +12,7 @@ export default function Dashboard() {
       const { data } = await supabase.auth.getUser()
 
       if (!data?.user) {
-        // Wenn kein User eingeloggt → zurück zur Login-Seite
+        // Kein User eingeloggt → zurück zum Login
         router.push('/')
       } else {
         setUser(data.user)
@@ -40,4 +40,4 @@ export default function Dashboard() {
       </button>
     </div>
   )
-    }
+}
