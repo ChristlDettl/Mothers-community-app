@@ -5,9 +5,15 @@ import Head from "next/head"
 export default function Home() {
   const [email, setEmail] = useState('')
 
-  async function handleLogin(e) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    const { error } = await supabase.auth.signInWithOtp({ email })
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        redirectTo: "https://mothers-community-app.vercel.app/auth/callback",
+      },
+    })
+
     if (error) {
       alert(error.message)
     } else {
