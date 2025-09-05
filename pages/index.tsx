@@ -1,12 +1,20 @@
-import { useState } from 'react'
-import { supabase } from '../lib/supabaseClient'
+import { useState } from "react"
 import Head from "next/head"
+import { createClient } from "@supabase/supabase-js"
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function Home() {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState("")
+  const [loading, setLoading] = useState(false)
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
+    setLoading(true)
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -14,10 +22,12 @@ export default function Home() {
       },
     })
 
+    setLoading(false)
+
     if (error) {
       alert(error.message)
     } else {
-      alert('Schau in dein Postfach für den Login-Link!')
+      alert("Schau in dein Postfach für den Login-Link!")
     }
   }
 
@@ -39,9 +49,12 @@ export default function Home() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <button type="submit">Login</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Wird gesendet..." : "Login"}
+          </button>
         </form>
       </div>
     </>
   )
 }
+
