@@ -1,26 +1,20 @@
-import { useEffect } from "react";
-import { useRouter } from "next/router";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function AuthCallback() {
   const router = useRouter();
 
   useEffect(() => {
     const handleCallback = async () => {
-      // Nimmt die Session aus der URL entgegen
-      const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+      const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
 
       if (error) {
-        console.error("Auth error:", error.message);
-        router.push("/"); // zurück zum Login
+        console.error('Auth error:', error.message);
+        router.push('/');
       } else {
-        console.log("Session:", data.session);
-        router.push("/dashboard"); // weiter ins Dashboard
+        console.log('Session:', data.session);
+        router.push('/dashboard');
       }
     };
 
@@ -29,4 +23,3 @@ export default function AuthCallback() {
 
   return <p>Authentifiziere dich...</p>;
 }
-
