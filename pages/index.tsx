@@ -10,7 +10,7 @@ export default function Home() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        redirectTo: "https://mothers-community-app.vercel.app/auth/callback",
+        emailRedirectTo: "https://mothers-community-app.vercel.app/auth/callback",
       },
     })
 
