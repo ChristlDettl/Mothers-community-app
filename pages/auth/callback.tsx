@@ -12,12 +12,12 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      // Nimmt die Session aus der URL entgegen und speichert sie
-      const { data, error } = await supabase.auth.exchangeCodeForSession({ storeSession: true });
+      // Nimmt die Session aus der URL entgegen
+      const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
 
       if (error) {
         console.error("Auth error:", error.message);
-        router.push("/"); // zurück zur Startseite/Login
+        router.push("/"); // zurück zum Login
       } else {
         console.log("Session:", data.session);
         router.push("/dashboard"); // weiter ins Dashboard
