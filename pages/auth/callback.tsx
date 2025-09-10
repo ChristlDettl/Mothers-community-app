@@ -11,27 +11,27 @@ export default function AuthCallback() {
   const router = useRouter();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      console.log("➡️ AuthCallback gestartet, URL:", window.location.href);
+    const checkSession = async () => {
+      console.log("➡️ Callback aufgerufen. Prüfe Session...");
 
-      const { data, error } = await supabase.auth.exchangeCodeForSession(
-        window.location.href
-      );
+      const { data, error } = await supabase.auth.getSession();
 
       if (error) {
-        console.error("❌ Auth error:", error);
+        console.error("❌ Fehler beim Laden der Session:", error);
         alert("Anmeldung fehlgeschlagen: " + error.message);
         router.push("/");
-      } else {
-        console.log("✅ Session erfolgreich:", data.session);
-        console.log("👤 User:", data.user);
-
+      } else if (data.session) {
+        console.log("✅ Session gefunden:", data.session);
         alert("Anmeldung erfolgreich!");
         router.push("/dashboard");
+      } else {
+        console.warn("⚠️ Keine Session gefunden.");
+        alert("Keine aktive Session gefunden, bitte erneut einloggen.");
+        router.push("/");
       }
     };
 
-    handleCallback();
+    checkSession();
   }, [router]);
 
   return <p>Authentifiziere dich...</p>;
