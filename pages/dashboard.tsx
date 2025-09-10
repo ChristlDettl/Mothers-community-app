@@ -1,45 +1,35 @@
-import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null);
-  const router = useRouter();
+  const [user, setUser] = useState<any>(null)
+  const router = useRouter()
 
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        setUser(user);
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser()
+      if (!data?.user) {
+        router.push('/') // nicht eingeloggt → zurück zum Login
       } else {
-        // nicht eingeloggt → zurück zum Login
-        router.push("/");
+        setUser(data.user)
       }
-    };
-
-    getUser();
-  }, [router]);
+    }
+    fetchUser()
+  }, [router])
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/");
+    await supabase.auth.signOut()
+    router.push('/')
   }
-
-  if (!user) return <p>Lade Dashboard...</p>;
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Willkommen im Dashboard 🎉</h1>
-      <p>Du bist eingeloggt als: <strong>{user.email}</strong></p>
+      <h1>Willkommen im Dashboard</h1>
+      {user && <p>Eingeloggt als: {user.email}</p>}
       <button onClick={handleLogout}>Logout</button>
     </div>
-  );
-            }
+  )
+}
+
+
