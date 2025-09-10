@@ -4,35 +4,34 @@ import { ensureUserProfile } from "../lib/profile";
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>({ full_name: "", birth_date: "", num_children: 0, children_ages: [], city: "" });
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data?.session?.user) {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Session error:", error);
+          setErrorMessage(`Session error: ${error.message}`);
+          return;
+        }
+
+        if (!data?.session?.user) {
+          setErrorMessage("Keine aktive Session gefunden. Bitte einloggen.");
+          return;
+        }
+
         setUser(data.session.user);
         await ensureUserProfile(data.session.user);
-
-        // Lade Profil aus DB
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", data.session.user.id)
-          .single();
-        if (profileData) setProfile(profileData);
+      } catch (err: any) {
+        console.error("Unexpected error:", err);
+        setErrorMessage(`Unerwarteter Fehler: ${err.message || err}`);
       }
     };
+
     fetchSession();
   }, []);
-
-  const handleSave = async () => {
-    const { error } = await supabase
-      .from("profiles")
-      .update(profile)
-      .eq("id", user.id);
-    if (error) console.error(error);
-    else alert("Profil gespeichert!");
-  };
 
   return (
     <div>
