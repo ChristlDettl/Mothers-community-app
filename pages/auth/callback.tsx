@@ -1,28 +1,39 @@
-import { useEffect } from 'react'
-import { useRouter } from 'next/router'
-import { supabase } from '../../lib/supabaseClient'
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+import { createClient } from "@supabase/supabase-js";
 
-export default function Callback() {
-  const router = useRouter()
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+export default function AuthCallback() {
+  const router = useRouter();
 
   useEffect(() => {
     const handleCallback = async () => {
-      // Session aus URL abholen
-      const { data, error } = await supabase.auth.exchangeCodeForSession(location.href)
+      console.log("➡️ AuthCallback gestartet, URL:", window.location.href);
+
+      const { data, error } = await supabase.auth.exchangeCodeForSession(
+        window.location.href
+      );
 
       if (error) {
-        console.error('Auth error:', error.message)
-        alert('Fehler bei der Anmeldung.')
-        router.push('/') // zurück zum Login
+        console.error("❌ Auth error:", error);
+        alert("Anmeldung fehlgeschlagen: " + error.message);
+        router.push("/");
       } else {
-        console.log('Login erfolgreich:', data)
-        router.push('/dashboard') // weiter zum Dashboard
+        console.log("✅ Session erfolgreich:", data.session);
+        console.log("👤 User:", data.user);
+
+        alert("Anmeldung erfolgreich!");
+        router.push("/dashboard");
       }
-    }
+    };
 
-    handleCallback()
-  }, [router])
+    handleCallback();
+  }, [router]);
 
-  return <p>Authentifiziere dich...</p>
+  return <p>Authentifiziere dich...</p>;
 }
 
