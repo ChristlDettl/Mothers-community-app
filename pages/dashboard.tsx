@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { ensureUserProfile } from "../lib/profile";
+import styles from "../styles/Dashboard.module.css"; // Styling importieren
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
@@ -8,88 +9,61 @@ export default function Dashboard() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchSessionAndProfile = async () => {
+    const fetchSession = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
+          console.error("Session error:", error);
           setErrorMessage(`Session error: ${error.message}`);
           return;
         }
+
         if (!data?.session?.user) {
           setErrorMessage("Keine aktive Session gefunden. Bitte einloggen.");
           return;
         }
 
-        const currentUser = data.session.user;
-        setUser(currentUser);
+        setUser(data.session.user);
+        await ensureUserProfile(data.session.user);
 
-        await ensureUserProfile(currentUser);
-
+        // Profil laden
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
-          .eq("id", currentUser.id)
+          .eq("id", data.session.user.id)
           .single();
 
         if (profileError) {
-          setErrorMessage(`Profil-Fehler: ${profileError.message}`);
-        } else {
-          // sicherstellen, dass children immer ein Array ist
-          setProfile({
-            ...profileData,
-            children: profileData.children || [],
-          });
+          console.error("Fehler beim Laden des Profils:", profileError);
+          setErrorMessage("Profil konnte nicht geladen werden.");
+          return;
         }
+
+        setProfile(profileData);
       } catch (err: any) {
+        console.error("Unexpected error:", err);
         setErrorMessage(`Unerwarteter Fehler: ${err.message || err}`);
       }
     };
 
-    fetchSessionAndProfile();
+    fetchSession();
   }, []);
 
-  // Speichern in Supabase
-  const handleSave = async () => {
-    if (!profile) return;
-
+  async function handleSave() {
+    if (!user || !profile) return;
     const { error } = await supabase
       .from("profiles")
-      .update({
-        full_name: profile.full_name,
-        birthdate: profile.birthdate,
-        city: profile.city,
-        children: profile.children,
-      })
+      .update(profile)
       .eq("id", user.id);
 
     if (error) {
-      setErrorMessage(`Fehler beim Speichern: ${error.message}`);
+      console.error("Fehler beim Speichern:", error.message);
+      alert("Fehler beim Speichern: " + error.message);
     } else {
-      alert("Profil gespeichert ✅");
+      alert("Profil gespeichert!");
     }
-  };
-
-  // Hilfsfunktionen für Kinder
-  const handleChildDateChange = (index: number, date: string) => {
-    const updatedChildren = [...profile.children];
-    updatedChildren[index] = { birthdate: date };
-    setProfile({ ...profile, children: updatedChildren });
-  };
-
-  const addChild = () => {
-    setProfile({
-      ...profile,
-      children: [...profile.children, { birthdate: "" }],
-    });
-  };
-
-  const removeChild = (index: number) => {
-    const updatedChildren = profile.children.filter(
-      (_: any, i: number) => i !== index
-    );
-    setProfile({ ...profile, children: updatedChildren });
-  };
+  }
 
   if (errorMessage) return <p>{errorMessage}</p>;
   if (!profile) return <p>Lade Profil...</p>;
@@ -98,54 +72,79 @@ export default function Dashboard() {
     <div>
       <h1>Willkommen, {profile.full_name || user?.email}</h1>
 
-      <input
-        type="text"
-        placeholder="Name"
-        value={profile.full_name || ""}
-        onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-      />
+      <form className={styles.form}>
+        <label className={styles.label}>Name</label>
+        <input
+          type="text"
+          className={styles.input}
+          value={profile.full_name || ""}
+          onChange={(e) =>
+            setProfile({ ...profile, full_name: e.target.value })
+          }
+        />
 
-      <input
-        type="date"
-        placeholder="Geburtsdatum"
-        value={profile.birthdate || ""}
-        onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
-      />
+        <label className={styles.label}>Geburtsdatum</label>
+        <input
+          type="date"
+          className={styles.input}
+          value={profile.birthdate || ""}
+          onChange={(e) =>
+            setProfile({ ...profile, birthdate: e.target.value })
+          }
+        />
 
-      <input
-        type="text"
-        placeholder="Wohnort"
-        value={profile.city || ""}
-        onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-      />
+        <label className={styles.label}>Anzahl Kinder</label>
+        <input
+          type="number"
+          className={styles.input}
+          value={profile.num_children || ""}
+          onChange={(e) =>
+            setProfile({
+              ...profile,
+              num_children: parseInt(e.target.value),
+            })
+          }
+        />
 
-      <h3>Kinder</h3>
-      {profile.children.map((child: any, index: number) => (
-        <div key={index}>
-          <input
-            type="date"
-            value={child.birthdate || ""}
-            onChange={(e) => handleChildDateChange(index, e.target.value)}
-          />
-          {child.birthdate && (
-            <span> Alter: {calculateAge(child.birthdate)} Jahre</span>
-          )}
-          <button onClick={() => removeChild(index)}>❌</button>
-        </div>
-      ))}
-      <button onClick={addChild}>➕ Kind hinzufügen</button>
+        <label className={styles.label}>Kinderalter (z. B. 3,5,8)</label>
+        <input
+          type="text"
+          className={styles.input}
+          value={profile.children_ages?.join(",") || ""}
+          onChange={(e) =>
+            setProfile({
+              ...profile,
+              children_ages: e.target.value.split(",").map(Number),
+            })
+          }
+        />
 
-      <button onClick={handleSave}>Speichern</button>
+        <label className={styles.label}>Wohnort</label>
+        <input
+          type="text"
+          className={styles.input}
+          value={profile.city || ""}
+          onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+        />
+
+        <button
+          type="button"
+          className={styles.button}
+          onClick={handleSave}
+        >
+          Speichern
+        </button>
+      </form>
 
       <p>
-        Dein Alter:{" "}
+        Alter:{" "}
         {profile.birthdate ? calculateAge(profile.birthdate) : "—"}
       </p>
     </div>
   );
 }
 
-// Hilfsfunktion zum Alter berechnen
+// Funktion zum Alter berechnen
 function calculateAge(birthDate: string) {
   const birth = new Date(birthDate);
   const today = new Date();
@@ -156,4 +155,4 @@ function calculateAge(birthDate: string) {
         }
 
 
-    
+      
