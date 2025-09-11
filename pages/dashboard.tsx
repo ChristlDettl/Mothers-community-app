@@ -71,6 +71,7 @@ export default function Dashboard() {
 
   return (
     <div>
+      <NavBar />
       <h1>Willkommen, {profile.full_name || user?.email}</h1>
 
       <form className={styles.form}>
