@@ -13,11 +13,9 @@ export default function Dashboard() {
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
-          console.error("Session error:", error);
           setErrorMessage(`Session error: ${error.message}`);
           return;
         }
-
         if (!data?.session?.user) {
           setErrorMessage("Keine aktive Session gefunden. Bitte einloggen.");
           return;
@@ -26,10 +24,8 @@ export default function Dashboard() {
         const currentUser = data.session.user;
         setUser(currentUser);
 
-        // Profil sicherstellen (falls nicht existiert → anlegen)
         await ensureUserProfile(currentUser);
 
-        // Profil laden
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
@@ -37,13 +33,15 @@ export default function Dashboard() {
           .single();
 
         if (profileError) {
-          console.error("Profil-Fehler:", profileError);
           setErrorMessage(`Profil-Fehler: ${profileError.message}`);
         } else {
-          setProfile(profileData);
+          // sicherstellen, dass children immer ein Array ist
+          setProfile({
+            ...profileData,
+            children: profileData.children || [],
+          });
         }
       } catch (err: any) {
-        console.error("Unexpected error:", err);
         setErrorMessage(`Unerwarteter Fehler: ${err.message || err}`);
       }
     };
@@ -61,16 +59,36 @@ export default function Dashboard() {
         full_name: profile.full_name,
         birthdate: profile.birthdate,
         city: profile.city,
-        children: profile.children, // erwartet JSON in Supabase
+        children: profile.children,
       })
       .eq("id", user.id);
 
     if (error) {
-      console.error("Fehler beim Speichern:", error);
       setErrorMessage(`Fehler beim Speichern: ${error.message}`);
     } else {
       alert("Profil gespeichert ✅");
     }
+  };
+
+  // Hilfsfunktionen für Kinder
+  const handleChildDateChange = (index: number, date: string) => {
+    const updatedChildren = [...profile.children];
+    updatedChildren[index] = { birthdate: date };
+    setProfile({ ...profile, children: updatedChildren });
+  };
+
+  const addChild = () => {
+    setProfile({
+      ...profile,
+      children: [...profile.children, { birthdate: "" }],
+    });
+  };
+
+  const removeChild = (index: number) => {
+    const updatedChildren = profile.children.filter(
+      (_: any, i: number) => i !== index
+    );
+    setProfile({ ...profile, children: updatedChildren });
   };
 
   if (errorMessage) return <p>{errorMessage}</p>;
@@ -101,18 +119,26 @@ export default function Dashboard() {
         onChange={(e) => setProfile({ ...profile, city: e.target.value })}
       />
 
-      <textarea
-        placeholder="Infos zu den Kindern (z.B. [{'age': 3}, {'age': 5}])"
-        value={JSON.stringify(profile.children || [])}
-        onChange={(e) =>
-          setProfile({ ...profile, children: JSON.parse(e.target.value || "[]") })
-        }
-      />
+      <h3>Kinder</h3>
+      {profile.children.map((child: any, index: number) => (
+        <div key={index}>
+          <input
+            type="date"
+            value={child.birthdate || ""}
+            onChange={(e) => handleChildDateChange(index, e.target.value)}
+          />
+          {child.birthdate && (
+            <span> Alter: {calculateAge(child.birthdate)} Jahre</span>
+          )}
+          <button onClick={() => removeChild(index)}>❌</button>
+        </div>
+      ))}
+      <button onClick={addChild}>➕ Kind hinzufügen</button>
 
       <button onClick={handleSave}>Speichern</button>
 
       <p>
-        Alter:{" "}
+        Dein Alter:{" "}
         {profile.birthdate ? calculateAge(profile.birthdate) : "—"}
       </p>
     </div>
@@ -127,6 +153,7 @@ function calculateAge(birthDate: string) {
   const m = today.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
   return age;
-}
+        }
 
 
+    
