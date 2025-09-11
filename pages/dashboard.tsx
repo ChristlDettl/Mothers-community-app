@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { ensureUserProfile } from "../lib/profile";
 import styles from "../styles/Dashboard.module.css"; // Styling importieren
+import NavBar from "../components/NavBar";
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
