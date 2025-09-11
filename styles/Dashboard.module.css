@@ -1,0 +1,48 @@
+.form {
+  display: grid;
+  grid-template-columns: 150px 1fr; /* links Labels, rechts Inputs */
+  gap: 1rem;
+  align-items: center;
+  max-width: 600px;
+  margin: 2rem auto;
+  background: #f9fafb;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.label {
+  font-weight: 600;
+  color: #374151; /* dunkles Grau */
+}
+
+.input {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2563eb; /* Blau */
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+}
+
+.button {
+  grid-column: 1 / -1; /* über beide Spalten */
+  background-color: #2563eb; /* Blau */
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.2s;
+}
+
+.button:hover {
+  background-color: #1e40af; /* dunkleres Blau */
+}
