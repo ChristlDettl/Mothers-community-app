@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import NavBar from "../components/NavBar";
+import NavBar from "../components/NavBar"; // 👈 NavBar importieren
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -30,23 +30,31 @@ export default function Register() {
   };
 
   return (
-    <form onSubmit={handleRegister}>
-      <input
-        type="email"
-        placeholder="E-Mail"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-      <input
-        type="password"
-        placeholder="Passwort"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
-      <button type="submit">Registrieren</button>
-      {error && <p>{error}</p>}
-    </form>
+    <div>
+      {/* 👇 NavBar wird hier angezeigt */}
+      <NavBar />
+
+      <h1>Registrieren</h1>
+      <form onSubmit={handleRegister}>
+        <input
+          type="email"
+          placeholder="E-Mail"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Passwort"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <button type="submit">Registrieren</button>
+        {error && <p style={{ color: "red" }}>{error}</p>}
+      </form>
+    </div>
   );
-}
+      }
+
+
