@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import NavBar from "../components/NavBar";
 
 export default function Register() {
   const [email, setEmail] = useState("");
