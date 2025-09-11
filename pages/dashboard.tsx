@@ -73,7 +73,7 @@ export default function Dashboard() {
         }}
       >
         <h1 style={{ textAlign: "center", marginBottom: "30px", color: "#333" }}>
-          Willkommen, {profile.full_name || user.email}
+          Willkommen, {profile?.full_name || user.email}
         </h1>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -89,7 +89,7 @@ export default function Dashboard() {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              value={profile.full_name || ""}
+              value={profile?.full_name || ""}
               onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
             />
           </div>
@@ -106,7 +106,7 @@ export default function Dashboard() {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              value={profile.birthdate || ""}
+              value={profile?.birthdate || ""}
               onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
             />
           </div>
@@ -129,7 +129,7 @@ export default function Dashboard() {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              value={profile.num_children || 0}
+              value={profile?.num_children || 0}
               onChange={(e) => setProfile({ ...profile, num_children: parseInt(e.target.value) })}
             />
           </div>
@@ -146,7 +146,7 @@ export default function Dashboard() {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              value={profile.children_ages?.join(",") || ""}
+              value={profile?.children_ages?.join(",") || ""}
               onChange={(e) =>
                 setProfile({
                   ...profile,
@@ -168,7 +168,7 @@ export default function Dashboard() {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              value={profile.city || ""}
+              value={profile?.city || ""}
               onChange={(e) => setProfile({ ...profile, city: e.target.value })}
             />
           </div>
