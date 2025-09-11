@@ -1,44 +1,24 @@
-import { useState } from 'react'
-import { supabase } from '../lib/supabaseClient'
-import Head from 'next/head'
+import Link from "next/link";
+import NavBar from "../components/NavBar";
 
 export default function Home() {
-  const [email, setEmail] = useState('')
-
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: 'https://mothers-community-app.vercel.app/auth/callback',
-      },
-    })
-
-    if (error) {
-      alert(error.message)
-    } else {
-      alert('Schau in dein Postfach für den Login-Link!')
-    }
-  }
-
   return (
-    <>
-      <Head>
-        <title>Mütter-Community</title>
-      </Head>
-      <div style={{ padding: 20 }}>
-        <h1>Mütter-Community</h1>
-        <form onSubmit={handleLogin}>
-          <input
-            type="email"
-            placeholder="E-Mail"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <button type="submit">Login</button>
-        </form>
+    <div>
+      <NavBar />
+      <div style={{ textAlign: "center", marginTop: "50px" }}>
+        <h1>Willkommen bei der Mütter-Community</h1>
+        <p>Bitte wähle eine Option:</p>
+        <div style={{ marginTop: "20px", display: "flex", justifyContent: "center", gap: "20px" }}>
+          <Link href="/login">
+            <button style={{ padding: "10px 20px" }}>Login</button>
+          </Link>
+          <Link href="/register">
+            <button style={{ padding: "10px 20px" }}>Neu registrieren</button>
+          </Link>
+        </div>
       </div>
-    </>
-  )
+    </div>
+  );
 }
+
+
