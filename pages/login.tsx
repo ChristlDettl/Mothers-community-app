@@ -1,3 +1,4 @@
+// pages/login.tsx
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
@@ -9,18 +10,10 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setError(error.message);
-      return;
-    }
-
-    if (data.user) {
+    } else {
       window.location.href = "/dashboard";
     }
   };
@@ -28,25 +21,15 @@ export default function Login() {
   return (
     <div>
       <NavBar />
-      <h1>Login</h1>
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="E-Mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Passwort"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">Einloggen</button>
-        {error && <p>{error}</p>}
-      </form>
+      <div style={{ maxWidth: "400px", margin: "50px auto" }}>
+        <h1>Login</h1>
+        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <input type="email" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input type="password" placeholder="Passwort" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <button type="submit">Login</button>
+          {error && <p style={{ color: "red" }}>{error}</p>}
+        </form>
+      </div>
     </div>
   );
 }
