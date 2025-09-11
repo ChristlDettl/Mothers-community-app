@@ -1,11 +1,21 @@
+// components/NavBar.tsx
 import Link from "next/link";
 
 export default function NavBar() {
   return (
-    <nav style={{ padding: "1rem", borderBottom: "1px solid #ccc" }}>
-      <Link href="/login" style={{ marginRight: "1rem" }}>Login</Link>
-      <Link href="/register" style={{ marginRight: "1rem" }}>Registrieren</Link>
-      <Link href="/dashboard">Dashboard</Link>
+    <nav style={{
+      padding: "10px 20px",
+      backgroundColor: "#f8f8f8",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
+    }}>
+      <Link href="/"><strong>Mütter-Community</strong></Link>
+      <div style={{ display: "flex", gap: "10px" }}>
+        <Link href="/login">Login</Link>
+        <Link href="/register">Registrieren</Link>
+      </div>
     </nav>
   );
 }
+
