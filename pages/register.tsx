@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import Navbar from "../components/Navbar";
+import NavBar from "../components/NavBar";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -45,7 +45,7 @@ export default function Register() {
 
   return (
     <div>
-      <Navbar />
+      <NavBar />
       <h1>Registrieren</h1>
       {success ? (
         <p>Registrierung erfolgreich! Du kannst dich nun einloggen.</p>
