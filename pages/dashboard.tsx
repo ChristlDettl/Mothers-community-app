@@ -1,10 +1,9 @@
 // pages/dashboard.tsx
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
-import { useRouter } from "next/router";
 
-// Funktion zum Alter berechnen
 function calculateAge(birthDate: string) {
   const birth = new Date(birthDate);
   const today = new Date();
@@ -14,51 +13,45 @@ function calculateAge(birthDate: string) {
   return age;
 }
 
-// Prüfen, ob das Profil vollständig ist
+// Profil-Check: vollständig ausgefüllt?
 const isProfileComplete = (profile: any) => {
-  return profile.full_name && profile.birthdate && profile.city;
+  return profile?.full_name && profile?.birthdate && profile?.city;
 };
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>({
-    full_name: "",
-    birthdate: "",
-    num_children: 0,
-    children_ages: [],
-    city: "",
-  });
-
+  const [profile, setProfile] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
     async function loadProfile() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
-        router.push("/login"); // Wenn kein User → zur Login-Seite
+        router.push("/login");
         return;
       }
       setUser(session.user);
 
+      // Profil laden
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", session.user.id)
         .single();
 
-      if (data) setProfile(data);
+      if (data) {
+        setProfile(data);
+
+        // Falls schon vollständig → sofort auf Hauptseite
+        if (isProfileComplete(data)) {
+          router.push("/main");
+        }
+      }
       if (error) console.error("Fehler beim Laden des Profils:", error);
     }
 
     loadProfile();
   }, [router]);
-
-  // Weiterleitung, wenn Profil komplett ist
-  useEffect(() => {
-    if (profile && isProfileComplete(profile)) {
-      router.push("/main"); // Weiterleitung zur Hauptseite
-    }
-  }, [profile, router]);
 
   const handleSave = async () => {
     const { error } = await supabase
@@ -70,14 +63,11 @@ export default function Dashboard() {
       alert("Fehler beim Speichern: " + error.message);
     } else {
       alert("Profil gespeichert!");
-      if (isProfileComplete(profile)) {
-        router.push("/main"); // Nach dem Speichern weiterleiten
-      }
+      router.push("/main"); // Nach Speichern auf Hauptseite
     }
   };
 
-  if (!user) return <p>Lade...</p>;
-  if (!profile) return <p>Lade Profil...</p>;
+  if (!user || !profile) return <p>Lade...</p>;
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#f7f8fa" }}>
@@ -97,7 +87,7 @@ export default function Dashboard() {
         </h1>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {/* Name */}
+          {/** Name */}
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <label style={{ flex: 1, fontWeight: 600 }}>Name:</label>
             <input
@@ -109,12 +99,12 @@ export default function Dashboard() {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              value={profile?.full_name || ""}
+              value={profile.full_name || ""}
               onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
             />
           </div>
 
-          {/* Geburtsdatum */}
+          {/** Geburtsdatum */}
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <label style={{ flex: 1, fontWeight: 600 }}>Geburtsdatum:</label>
             <input
@@ -126,18 +116,20 @@ export default function Dashboard() {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              value={profile?.birthdate || ""}
+              value={profile.birthdate || ""}
               onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
             />
           </div>
 
-          {/* Alter */}
+          {/** Alter */}
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <label style={{ flex: 1, fontWeight: 600 }}>Alter:</label>
-            <span style={{ flex: 2 }}>{profile.birthdate ? calculateAge(profile.birthdate) : "—"}</span>
+            <span style={{ flex: 2 }}>
+              {profile.birthdate ? calculateAge(profile.birthdate) : "—"}
+            </span>
           </div>
 
-          {/* Anzahl Kinder */}
+          {/** Anzahl Kinder */}
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <label style={{ flex: 1, fontWeight: 600 }}>Anzahl Kinder:</label>
             <input
@@ -149,12 +141,12 @@ export default function Dashboard() {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              value={profile?.num_children || 0}
+              value={profile.num_children || 0}
               onChange={(e) => setProfile({ ...profile, num_children: parseInt(e.target.value) })}
             />
           </div>
 
-          {/* Alter der Kinder */}
+          {/** Alter der Kinder */}
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <label style={{ flex: 1, fontWeight: 600 }}>Kinderalter (z.B. 3,5,8):</label>
             <input
@@ -166,17 +158,19 @@ export default function Dashboard() {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              value={profile?.children_ages?.join(",") || ""}
+              value={profile.children_ages?.join(",") || ""}
               onChange={(e) =>
                 setProfile({
                   ...profile,
-                  children_ages: e.target.value.split(",").map((n) => parseInt(n.trim()) || 0),
+                  children_ages: e.target.value
+                    .split(",")
+                    .map((n) => parseInt(n.trim()) || 0),
                 })
               }
             />
           </div>
 
-          {/* Wohnort */}
+          {/** Wohnort */}
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <label style={{ flex: 1, fontWeight: 600 }}>Wohnort:</label>
             <input
@@ -188,12 +182,12 @@ export default function Dashboard() {
                 border: "1px solid #ccc",
                 fontSize: "16px",
               }}
-              value={profile?.city || ""}
+              value={profile.city || ""}
               onChange={(e) => setProfile({ ...profile, city: e.target.value })}
             />
           </div>
 
-          {/* Speichern-Button */}
+          {/** Speichern-Button */}
           <button
             onClick={handleSave}
             style={{
@@ -217,8 +211,8 @@ export default function Dashboard() {
       </div>
     </div>
   );
-            }
+}
 
 
 
-                    
+                  
