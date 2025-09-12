@@ -12,6 +12,11 @@ function calculateAge(birthDate: string) {
   return age;
 }
 
+// ✅ Hilfsfunktion zur Vollständigkeitsprüfung
+function isProfileComplete(profile: any) {
+  return profile?.full_name && profile?.birthdate && profile?.city;
+}
+
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>({
@@ -24,11 +29,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function loadProfile() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session?.user) {
         window.location.href = "/login";
         return;
       }
+
       setUser(session.user);
 
       const { data, error } = await supabase
@@ -37,8 +46,18 @@ export default function Dashboard() {
         .eq("id", session.user.id)
         .single();
 
-      if (data) setProfile(data);
-      if (error) console.error("Fehler beim Laden des Profils:", error);
+      if (data) {
+        setProfile(data);
+
+        // ✅ Wenn Profil vollständig → weiterleiten zur Hauptseite
+        if (isProfileComplete(data)) {
+          window.location.href = "/main";
+        }
+      }
+
+      if (error) {
+        console.error("Fehler beim Laden des Profils:", error);
+      }
     }
 
     loadProfile();
@@ -54,13 +73,23 @@ export default function Dashboard() {
       alert("Fehler beim Speichern: " + error.message);
     } else {
       alert("Profil gespeichert!");
+      // ✅ Nach dem Speichern nochmal prüfen
+      if (isProfileComplete(profile)) {
+        window.location.href = "/main";
+      }
     }
   };
 
   if (!user) return <p>Lade...</p>;
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#f7f8fa" }}>
+    <div
+      style={{
+        fontFamily: "Arial, sans-serif",
+        minHeight: "100vh",
+        backgroundColor: "#f7f8fa",
+      }}
+    >
       <NavBar />
       <div
         style={{
@@ -72,7 +101,13 @@ export default function Dashboard() {
           boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
         }}
       >
-        <h1 style={{ textAlign: "center", marginBottom: "30px", color: "#333" }}>
+        <h1
+          style={{
+            textAlign: "center",
+            marginBottom: "30px",
+            color: "#333",
+          }}
+        >
           Willkommen, {profile?.full_name || user.email}
         </h1>
 
@@ -90,7 +125,9 @@ export default function Dashboard() {
                 fontSize: "16px",
               }}
               value={profile?.full_name || ""}
-              onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+              onChange={(e) =>
+                setProfile({ ...profile, full_name: e.target.value })
+              }
             />
           </div>
 
@@ -107,14 +144,18 @@ export default function Dashboard() {
                 fontSize: "16px",
               }}
               value={profile?.birthdate || ""}
-              onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
+              onChange={(e) =>
+                setProfile({ ...profile, birthdate: e.target.value })
+              }
             />
           </div>
 
           {/** Alter */}
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <label style={{ flex: 1, fontWeight: 600 }}>Alter:</label>
-            <span style={{ flex: 2 }}>{profile.birthdate ? calculateAge(profile.birthdate) : "—"}</span>
+            <span style={{ flex: 2 }}>
+              {profile.birthdate ? calculateAge(profile.birthdate) : "—"}
+            </span>
           </div>
 
           {/** Anzahl Kinder */}
@@ -130,13 +171,20 @@ export default function Dashboard() {
                 fontSize: "16px",
               }}
               value={profile?.num_children || 0}
-              onChange={(e) => setProfile({ ...profile, num_children: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setProfile({
+                  ...profile,
+                  num_children: parseInt(e.target.value),
+                })
+              }
             />
           </div>
 
           {/** Alter der Kinder */}
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-            <label style={{ flex: 1, fontWeight: 600 }}>Kinderalter (z.B. 3,5,8):</label>
+            <label style={{ flex: 1, fontWeight: 600 }}>
+              Kinderalter (z.B. 3,5,8):
+            </label>
             <input
               type="text"
               style={{
@@ -150,7 +198,9 @@ export default function Dashboard() {
               onChange={(e) =>
                 setProfile({
                   ...profile,
-                  children_ages: e.target.value.split(",").map((n) => parseInt(n.trim()) || 0),
+                  children_ages: e.target.value
+                    .split(",")
+                    .map((n) => parseInt(n.trim()) || 0),
                 })
               }
             />
@@ -169,7 +219,9 @@ export default function Dashboard() {
                 fontSize: "16px",
               }}
               value={profile?.city || ""}
-              onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+              onChange={(e) =>
+                setProfile({ ...profile, city: e.target.value })
+              }
             />
           </div>
 
@@ -188,8 +240,12 @@ export default function Dashboard() {
               cursor: "pointer",
               transition: "all 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#4338ca")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#4f46e5")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "#4338ca")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "#4f46e5")
+            }
           >
             Speichern
           </button>
@@ -197,13 +253,7 @@ export default function Dashboard() {
       </div>
     </div>
   );
-                }
-
-
-
-
-
-
+}
 
 
 
