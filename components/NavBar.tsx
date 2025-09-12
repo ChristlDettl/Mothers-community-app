@@ -1,21 +1,44 @@
 // components/NavBar.tsx
-import Link from "next/link";
+import { supabase } from "../lib/supabaseClient";
 
 export default function NavBar() {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/login"; // nach Logout zurück zur Login-Seite
+  };
+
   return (
-    <nav style={{
-      padding: "10px 20px",
-      backgroundColor: "#f8f8f8",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center"
-    }}>
-      <Link href="/"><strong>Mütter-Community</strong></Link>
-      <div style={{ display: "flex", gap: "10px" }}>
-        <Link href="/login">Login</Link>
-        <Link href="/register">Registrieren</Link>
-      </div>
+    <nav
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "15px 30px",
+        backgroundColor: "#4f46e5",
+        color: "#fff",
+      }}
+    >
+      <h2 style={{ margin: 0, fontWeight: 700 }}>Mothers Community</h2>
+
+      <button
+        onClick={handleLogout}
+        style={{
+          padding: "8px 16px",
+          backgroundColor: "#ef4444",
+          color: "#fff",
+          border: "none",
+          borderRadius: "8px",
+          cursor: "pointer",
+          fontWeight: 600,
+          transition: "all 0.2s",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+      >
+        Logout
+      </button>
     </nav>
   );
 }
+
 
