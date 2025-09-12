@@ -1,34 +1,38 @@
 // pages/main.tsx
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
-import { useRouter } from "next/router";
 
-export default function MainPage() {
+export default function Main() {
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
-    async function checkSession() {
+    async function checkUser() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
-        router.push("/login"); // Wenn nicht eingeloggt → zurück zum Login
+        router.push("/login");
         return;
       }
       setUser(session.user);
     }
-
-    checkSession();
+    checkUser();
   }, [router]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   if (!user) return <p>Lade...</p>;
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#f9fafb" }}>
+    <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#f7f8fa" }}>
       <NavBar />
       <div
         style={{
-          maxWidth: "800px",
+          maxWidth: "600px",
           margin: "50px auto",
           padding: "30px",
           backgroundColor: "#fff",
@@ -37,12 +41,55 @@ export default function MainPage() {
           textAlign: "center",
         }}
       >
-        <h1 style={{ marginBottom: "20px", color: "#333" }}>🌸 Hauptseite</h1>
-        <p style={{ fontSize: "18px", color: "#555" }}>
-          Willkommen {user.email}! <br />
-          Dies ist deine Hauptseite nach dem Login.
-        </p>
+        <h1 style={{ marginBottom: "20px", color: "#333" }}>
+          Hallo {user.email}, willkommen auf der Hauptseite 🎉
+        </h1>
+
+        {/** Profil bearbeiten Button */}
+        <button
+          onClick={() => router.push("/dashboard")}
+          style={{
+            margin: "10px",
+            padding: "12px 20px",
+            backgroundColor: "#4f46e5",
+            color: "#fff",
+            fontWeight: 600,
+            fontSize: "16px",
+            border: "none",
+            borderRadius: "10px",
+            cursor: "pointer",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#4338ca")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#4f46e5")}
+        >
+          Profil bearbeiten
+        </button>
+
+        {/** Logout Button */}
+        <button
+          onClick={handleLogout}
+          style={{
+            margin: "10px",
+            padding: "12px 20px",
+            backgroundColor: "#ef4444",
+            color: "#fff",
+            fontWeight: 600,
+            fontSize: "16px",
+            border: "none",
+            borderRadius: "10px",
+            cursor: "pointer",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+        >
+          Logout
+        </button>
       </div>
     </div>
   );
-        }
+}
+
+
+
