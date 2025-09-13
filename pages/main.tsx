@@ -12,45 +12,23 @@ export default function Main() {
 
   useEffect(() => {
     async function loadUser() {
-      console.log("🔄 Lade Session...");
       const { data: { session } } = await supabase.auth.getSession();
-      console.log("Session:", session);
-
       if (!session?.user) {
-        console.log("❌ Kein User → redirect /login");
         router.push("/login");
         return;
       }
-
       setUser(session.user);
 
-      console.log("📥 Lade Profil...");
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", session.user.id)
         .single();
 
-      console.log("Profil:", data, "Error:", error);
-
       if (error) {
         console.error("Fehler beim Laden des Profils:", error);
-        setLoading(false);
-        return;
-      }
-
-      if (!data) {
-        console.log("❌ Kein Profil gefunden → redirect /dashboard");
-        router.push("/dashboard");
-        return;
-      }
-
-      setProfile(data);
-
-      if (!data.full_name || !data.birthdate || !data.city) {
-        console.log("⚠️ Profil unvollständig → redirect /dashboard");
-        router.push("/dashboard");
-        return;
+      } else {
+        setProfile(data);
       }
 
       setLoading(false);
@@ -59,17 +37,15 @@ export default function Main() {
     loadUser();
   }, [router]);
 
-  // Loading-Schutz
   if (loading) return <p style={{ textAlign: "center" }}>Lade...</p>;
-  if (!user) return <p style={{ textAlign: "center" }}>Bitte einloggen...</p>;
-  if (!profile) return <p style={{ textAlign: "center" }}>Profil wird geladen...</p>;
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#f7f8fa" }}>
       <NavBar />
+
       <div
         style={{
-          maxWidth: "800px",
+          maxWidth: "600px",
           margin: "50px auto",
           padding: "30px",
           backgroundColor: "#fff",
@@ -77,12 +53,29 @@ export default function Main() {
           boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
         }}
       >
-        <h1 style={{ textAlign: "center", marginBottom: "20px" }}>
-          👋 Willkommen zurück, {profile.full_name || user.email}
+        <h1 style={{ textAlign: "center", marginBottom: "30px", color: "#333" }}>
+          Hallo {profile?.full_name || user?.email} 👋
         </h1>
-        <p style={{ textAlign: "center", color: "#666" }}>
-          Wohnort: {profile.city} · Anzahl Kinder: {profile.num_children}
+
+        <p style={{ textAlign: "center", marginBottom: "20px" }}>
+          Willkommen in deiner Community-Hauptseite!
         </p>
+
+        <div style={{ display: "flex", justifyContent: "center", gap: "15px" }}>
+          <button
+            onClick={() => router.push("/dashboard")}
+            style={{
+              padding: "12px 20px",
+              backgroundColor: "#4f46e5",
+              color: "#fff",
+              border: "none",
+              borderRadius: "10px",
+              cursor: "pointer",
+            }}
+          >
+            Profil bearbeiten
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -90,6 +83,4 @@ export default function Main() {
 
 
 
-
-
-          
+  
