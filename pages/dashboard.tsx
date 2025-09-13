@@ -14,7 +14,8 @@ function calculateAge(birthDate: string) {
 }
 
 const isProfileComplete = (profile: any) => {
-  return profile?.full_name && profile?.birthdate && profile?.city;
+  if (!profile) return false;
+  return profile.full_name && profile.birthdate && profile.city;
 };
 
 export default function Dashboard() {
@@ -22,13 +23,13 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false); // <- NEU: Steuerung Bearbeitungsmodus
+  const [editing, setEditing] = useState(false); // Profil bearbeiten
 
   useEffect(() => {
     async function loadProfile() {
-      setLoading(true);
-
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.user) {
         router.push("/login");
         return;
@@ -43,15 +44,6 @@ export default function Dashboard() {
 
       if (error) {
         console.error("Fehler beim Laden des Profils:", error);
-        setProfile({
-          id: session.user.id,
-          email: session.user.email,
-          full_name: "",
-          birthdate: "",
-          city: "",
-          num_children: 0,
-          children_ages: [],
-        });
       } else {
         setProfile(data);
       }
@@ -62,9 +54,14 @@ export default function Dashboard() {
     loadProfile();
   }, [router]);
 
-  const handleSave = async () => {
-    if (!user || !profile) return;
+  useEffect(() => {
+    if (!loading && profile && isProfileComplete(profile)) {
+      router.push("/main"); // weiterleiten, wenn Profil vollständig
+    }
+  }, [profile, loading, router]);
 
+  const handleSave = async () => {
+    if (!user) return;
     const { error } = await supabase
       .from("profiles")
       .update(profile)
@@ -74,21 +71,22 @@ export default function Dashboard() {
       alert("Fehler beim Speichern: " + error.message);
     } else {
       alert("Profil gespeichert!");
-      setEditing(false); // zurück in Ansicht
-      if (isProfileComplete(profile)) {
-        router.push("/main");
-      }
+      setEditing(false); // nach Speichern zurück
     }
   };
 
   if (loading) return <p style={{ textAlign: "center" }}>Lade...</p>;
-  if (!user) return <p style={{ textAlign: "center" }}>Bitte einloggen...</p>;
-  if (!profile) return <p style={{ textAlign: "center" }}>Profil wird vorbereitet...</p>;
+  if (!user) return <p style={{ textAlign: "center" }}>Nicht eingeloggt</p>;
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#f7f8fa" }}>
+    <div
+      style={{
+        fontFamily: "Arial, sans-serif",
+        minHeight: "100vh",
+        backgroundColor: "#f7f8fa",
+      }}
+    >
       <NavBar />
-
       <div
         style={{
           maxWidth: "600px",
@@ -99,19 +97,160 @@ export default function Dashboard() {
           boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
         }}
       >
-        <h1 style={{ textAlign: "center", marginBottom: "30px", color: "#333" }}>
-          Willkommen, {profile.full_name || user.email}
+        <h1
+          style={{
+            textAlign: "center",
+            marginBottom: "30px",
+            color: "#333",
+          }}
+        >
+          Willkommen, {profile?.full_name || user.email}
         </h1>
 
-        {!editing ? (
-          // 👉 Nur ANZEIGE, kein Bearbeiten
-          <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            <p><strong>Name:</strong> {profile.full_name || "—"}</p>
-            <p><strong>Geburtsdatum:</strong> {profile.birthdate || "—"}</p>
-            <p><strong>Alter:</strong> {profile.birthdate ? calculateAge(profile.birthdate) : "—"}</p>
-            <p><strong>Anzahl Kinder:</strong> {profile.num_children || "—"}</p>
-            <p><strong>Kinderalter:</strong> {profile.children_ages?.join(", ") || "—"}</p>
-            <p><strong>Wohnort:</strong> {profile.city || "—"}</p>
+        {editing ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {/* Name */}
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <label style={{ flex: 1, fontWeight: 600 }}>Name:</label>
+              <input
+                type="text"
+                style={{
+                  flex: 2,
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+                value={profile?.full_name || ""}
+                onChange={(e) =>
+                  setProfile({ ...profile, full_name: e.target.value })
+                }
+              />
+            </div>
+
+            {/* Geburtsdatum */}
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <label style={{ flex: 1, fontWeight: 600 }}>Geburtsdatum:</label>
+              <input
+                type="date"
+                style={{
+                  flex: 2,
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+                value={profile?.birthdate || ""}
+                onChange={(e) =>
+                  setProfile({ ...profile, birthdate: e.target.value })
+                }
+              />
+            </div>
+
+            {/* Alter */}
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <label style={{ flex: 1, fontWeight: 600 }}>Alter:</label>
+              <span style={{ flex: 2 }}>
+                {profile?.birthdate ? calculateAge(profile.birthdate) : "—"}
+              </span>
+            </div>
+
+            {/* Anzahl Kinder */}
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <label style={{ flex: 1, fontWeight: 600 }}>Anzahl Kinder:</label>
+              <input
+                type="number"
+                style={{
+                  flex: 2,
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+                value={profile?.num_children || 0}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    num_children: parseInt(e.target.value),
+                  })
+                }
+              />
+            </div>
+
+            {/* Alter der Kinder */}
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <label style={{ flex: 1, fontWeight: 600 }}>
+                Kinderalter (z.B. 3,5,8):
+              </label>
+              <input
+                type="text"
+                style={{
+                  flex: 2,
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+                value={profile?.children_ages?.join(",") || ""}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    children_ages: e.target.value
+                      .split(",")
+                      .map((n) => parseInt(n.trim()) || 0),
+                  })
+                }
+              />
+            </div>
+
+            {/* Wohnort */}
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <label style={{ flex: 1, fontWeight: 600 }}>Wohnort:</label>
+              <input
+                type="text"
+                style={{
+                  flex: 2,
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+                value={profile?.city || ""}
+                onChange={(e) =>
+                  setProfile({ ...profile, city: e.target.value })
+                }
+              />
+            </div>
+
+            {/* Speichern-Button */}
+            <button
+              onClick={handleSave}
+              style={{
+                marginTop: "20px",
+                padding: "12px 20px",
+                backgroundColor: "#4f46e5",
+                color: "#fff",
+                fontWeight: 600,
+                fontSize: "16px",
+                border: "none",
+                borderRadius: "10px",
+                cursor: "pointer",
+              }}
+            >
+              Speichern
+            </button>
+          </div>
+        ) : (
+          <div style={{ textAlign: "center" }}>
+            <p>
+              <strong>Name:</strong> {profile?.full_name || "—"}
+            </p>
+            <p>
+              <strong>Geburtsdatum:</strong> {profile?.birthdate || "—"}
+            </p>
+            <p>
+              <strong>Wohnort:</strong> {profile?.city || "—"}
+            </p>
 
             <button
               onClick={() => setEditing(true)}
@@ -120,6 +259,8 @@ export default function Dashboard() {
                 padding: "12px 20px",
                 backgroundColor: "#4f46e5",
                 color: "#fff",
+                fontWeight: 600,
+                fontSize: "16px",
                 border: "none",
                 borderRadius: "10px",
                 cursor: "pointer",
@@ -127,48 +268,6 @@ export default function Dashboard() {
             >
               Profil bearbeiten
             </button>
-          </div>
-        ) : (
-          // 👉 Bearbeitungsformular
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <input
-              type="text"
-              placeholder="Name"
-              value={profile.full_name || ""}
-              onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-            />
-            <input
-              type="date"
-              placeholder="Geburtsdatum"
-              value={profile.birthdate || ""}
-              onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
-            />
-            <input
-              type="number"
-              placeholder="Anzahl Kinder"
-              value={profile.num_children || 0}
-              onChange={(e) => setProfile({ ...profile, num_children: parseInt(e.target.value) })}
-            />
-            <input
-              type="text"
-              placeholder="Kinderalter (z.B. 3,5,8)"
-              value={profile.children_ages?.join(",") || ""}
-              onChange={(e) =>
-                setProfile({
-                  ...profile,
-                  children_ages: e.target.value.split(",").map((n) => parseInt(n.trim()) || 0),
-                })
-              }
-            />
-            <input
-              type="text"
-              placeholder="Wohnort"
-              value={profile.city || ""}
-              onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-            />
-
-            <button onClick={handleSave}>Speichern</button>
-            <button onClick={() => setEditing(false)}>Abbrechen</button>
           </div>
         )}
       </div>
@@ -181,4 +280,5 @@ export default function Dashboard() {
 
 
 
-                    
+
+                      
