@@ -1,44 +1,56 @@
 // pages/main.tsx
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
-import { useRouter } from "next/router";
 
 export default function Main() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     async function loadUser() {
+      console.log("🔄 Lade Session...");
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("Session:", session);
 
       if (!session?.user) {
+        console.log("❌ Kein User → redirect /login");
         router.push("/login");
         return;
       }
 
       setUser(session.user);
 
+      console.log("📥 Lade Profil...");
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", session.user.id)
         .single();
 
+      console.log("Profil:", data, "Error:", error);
+
       if (error) {
         console.error("Fehler beim Laden des Profils:", error);
+        setLoading(false);
+        return;
       }
 
-      if (data) {
-        setProfile(data);
+      if (!data) {
+        console.log("❌ Kein Profil gefunden → redirect /dashboard");
+        router.push("/dashboard");
+        return;
+      }
 
-        // Wenn Profil nicht vollständig, zurück zu Dashboard
-        if (!data.full_name || !data.birthdate || !data.city) {
-          router.push("/dashboard");
-          return;
-        }
+      setProfile(data);
+
+      if (!data.full_name || !data.birthdate || !data.city) {
+        console.log("⚠️ Profil unvollständig → redirect /dashboard");
+        router.push("/dashboard");
+        return;
       }
 
       setLoading(false);
@@ -47,12 +59,10 @@ export default function Main() {
     loadUser();
   }, [router]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
-
-  if (loading) return <p>Lade Hauptseite...</p>;
+  // Loading-Schutz
+  if (loading) return <p style={{ textAlign: "center" }}>Lade...</p>;
+  if (!user) return <p style={{ textAlign: "center" }}>Bitte einloggen...</p>;
+  if (!profile) return <p style={{ textAlign: "center" }}>Profil wird geladen...</p>;
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#f7f8fa" }}>
@@ -67,31 +77,17 @@ export default function Main() {
           boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
         }}
       >
-        <h1 style={{ textAlign: "center", marginBottom: "30px", color: "#333" }}>
-          Hallo {profile?.full_name}!
+        <h1 style={{ textAlign: "center", marginBottom: "20px" }}>
+          👋 Willkommen zurück, {profile.full_name || user.email}
         </h1>
-        <p style={{ textAlign: "center", color: "#555" }}>
-          Willkommen auf deiner Hauptseite. Hier kannst du Inhalte sehen oder dein Profil bearbeiten.
+        <p style={{ textAlign: "center", color: "#666" }}>
+          Wohnort: {profile.city} · Anzahl Kinder: {profile.num_children}
         </p>
-
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "30px" }}>
-          <button
-            onClick={() => router.push("/dashboard")}
-            style={{ padding: "12px 20px", marginRight: "15px", backgroundColor: "#4f46e5", color: "#fff", fontWeight: 600, borderRadius: "10px", border: "none", cursor: "pointer" }}
-          >
-            Profil bearbeiten
-          </button>
-          <button
-            onClick={handleLogout}
-            style={{ padding: "12px 20px", backgroundColor: "#e53e3e", color: "#fff", fontWeight: 600, borderRadius: "10px", border: "none", cursor: "pointer" }}
-          >
-            Logout
-          </button>
-        </div>
       </div>
     </div>
   );
-          }
+}
+
 
 
 
