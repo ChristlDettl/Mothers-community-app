@@ -63,7 +63,7 @@ export default function Main() {
 
         <div style={{ display: "flex", justifyContent: "center", gap: "15px" }}>
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/dashboard?edit=1")}
             style={{
               padding: "12px 20px",
               backgroundColor: "#4f46e5",
