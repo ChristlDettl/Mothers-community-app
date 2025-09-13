@@ -55,10 +55,10 @@ export default function Dashboard() {
   }, [router]);
 
   useEffect(() => {
-    if (!loading && profile && isProfileComplete(profile)) {
-      router.push("/main"); // weiterleiten, wenn Profil vollständig
+    if (!loading && profile && isProfileComplete(profile) && !editing) {
+      router.push("/main"); // nut weiterleiten, wenn nicht im bearbeiten-modus
     }
-  }, [profile, loading, router]);
+  }, [profile, loading, editing, router]);
 
   const handleSave = async () => {
     if (!user) return;
