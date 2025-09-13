@@ -1,10 +1,9 @@
 // pages/dashboard.tsx
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
-import { useRouter } from "next/router";
 
-// Alter berechnen
 function calculateAge(birthDate: string) {
   const birth = new Date(birthDate);
   const today = new Date();
@@ -14,56 +13,70 @@ function calculateAge(birthDate: string) {
   return age;
 }
 
-// Prüfen, ob Profil vollständig ist
 const isProfileComplete = (profile: any) => {
   return profile.full_name && profile.birthdate && profile.city;
 };
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>({
-    full_name: "",
-    birthdate: "",
-    num_children: 0,
-    children_ages: [],
-    city: "",
-  });
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Profil laden
   useEffect(() => {
     async function loadProfile() {
+      console.log("🔄 Lade Session...");
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("Session:", session);
+
       if (!session?.user) {
+        console.log("❌ Kein User → redirect /login");
         router.push("/login");
         return;
       }
+
       setUser(session.user);
 
+      console.log("📥 Lade Profil...");
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", session.user.id)
         .single();
 
-      if (error) console.error("Fehler beim Laden des Profils:", error);
-      if (data) setProfile(data);
+      console.log("Profil:", data, "Error:", error);
 
+      if (error) {
+        console.error("Fehler beim Laden des Profils:", error);
+        setProfile({
+          id: session.user.id,
+          email: session.user.email,
+          full_name: "",
+          birthdate: "",
+          city: "",
+          num_children: 0,
+          children_ages: [],
+        });
+        setLoading(false);
+        return;
+      }
+
+      setProfile(data);
       setLoading(false);
+
+      // Falls Profil schon komplett ist → direkt zur Hauptseite
+      if (data && isProfileComplete(data)) {
+        console.log("✅ Profil vollständig → redirect /main");
+        router.push("/main");
+      }
     }
 
     loadProfile();
   }, [router]);
 
-  // Weiterleitung, wenn Profil vollständig ist
-  useEffect(() => {
-    if (!loading && profile && isProfileComplete(profile)) {
-      router.push("/main"); // /main = deine Hauptseite
-    }
-  }, [profile, loading, router]);
-
   const handleSave = async () => {
+    if (!user || !profile) return;
+
     const { error } = await supabase
       .from("profiles")
       .update(profile)
@@ -73,15 +86,15 @@ export default function Dashboard() {
       alert("Fehler beim Speichern: " + error.message);
     } else {
       alert("Profil gespeichert!");
+      if (isProfileComplete(profile)) {
+        router.push("/main");
+      }
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
-
-  if (loading) return <p>Lade...</p>;
+  if (loading) return <p style={{ textAlign: "center" }}>Lade...</p>;
+  if (!user) return <p style={{ textAlign: "center" }}>Bitte einloggen...</p>;
+  if (!profile) return <p style={{ textAlign: "center" }}>Profil wird vorbereitet...</p>;
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#f7f8fa" }}>
@@ -107,7 +120,7 @@ export default function Dashboard() {
             <input
               type="text"
               style={{ flex: 2, padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
-              value={profile?.full_name || ""}
+              value={profile.full_name || ""}
               onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
             />
           </div>
@@ -118,7 +131,7 @@ export default function Dashboard() {
             <input
               type="date"
               style={{ flex: 2, padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
-              value={profile?.birthdate || ""}
+              value={profile.birthdate || ""}
               onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
             />
           </div>
@@ -126,7 +139,9 @@ export default function Dashboard() {
           {/* Alter */}
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <label style={{ flex: 1, fontWeight: 600 }}>Alter:</label>
-            <span style={{ flex: 2 }}>{profile.birthdate ? calculateAge(profile.birthdate) : "—"}</span>
+            <span style={{ flex: 2 }}>
+              {profile.birthdate ? calculateAge(profile.birthdate) : "—"}
+            </span>
           </div>
 
           {/* Anzahl Kinder */}
@@ -135,20 +150,23 @@ export default function Dashboard() {
             <input
               type="number"
               style={{ flex: 2, padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
-              value={profile?.num_children || 0}
+              value={profile.num_children || 0}
               onChange={(e) => setProfile({ ...profile, num_children: parseInt(e.target.value) })}
             />
           </div>
 
-          {/* Kinderalter */}
+          {/* Alter der Kinder */}
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <label style={{ flex: 1, fontWeight: 600 }}>Kinderalter (z.B. 3,5,8):</label>
             <input
               type="text"
               style={{ flex: 2, padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
-              value={profile?.children_ages?.join(",") || ""}
+              value={profile.children_ages?.join(",") || ""}
               onChange={(e) =>
-                setProfile({ ...profile, children_ages: e.target.value.split(",").map((n) => parseInt(n.trim()) || 0) })
+                setProfile({
+                  ...profile,
+                  children_ages: e.target.value.split(",").map((n) => parseInt(n.trim()) || 0),
+                })
               }
             />
           </div>
@@ -159,26 +177,28 @@ export default function Dashboard() {
             <input
               type="text"
               style={{ flex: 2, padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
-              value={profile?.city || ""}
+              value={profile.city || ""}
               onChange={(e) => setProfile({ ...profile, city: e.target.value })}
             />
           </div>
 
-          {/* Buttons */}
-          <div style={{ display: "flex", gap: "15px", marginTop: "20px" }}>
-            <button
-              onClick={handleSave}
-              style={{ flex: 1, padding: "12px", backgroundColor: "#4f46e5", color: "#fff", fontWeight: 600, borderRadius: "10px", border: "none", cursor: "pointer" }}
-            >
-              Speichern
-            </button>
-            <button
-              onClick={handleLogout}
-              style={{ flex: 1, padding: "12px", backgroundColor: "#e53e3e", color: "#fff", fontWeight: 600, borderRadius: "10px", border: "none", cursor: "pointer" }}
-            >
-              Logout
-            </button>
-          </div>
+          {/* Speichern-Button */}
+          <button
+            onClick={handleSave}
+            style={{
+              marginTop: "20px",
+              padding: "12px 20px",
+              backgroundColor: "#4f46e5",
+              color: "#fff",
+              fontWeight: 600,
+              fontSize: "16px",
+              border: "none",
+              borderRadius: "10px",
+              cursor: "pointer",
+            }}
+          >
+            Speichern
+          </button>
         </div>
       </div>
     </div>
@@ -187,5 +207,8 @@ export default function Dashboard() {
 
 
 
-      
-        
+
+
+
+
+              
