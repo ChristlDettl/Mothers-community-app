@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 export default function NavBar() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/login"; // nach Logout zurück zur Login-Seite
+    window.location.href = "/"; // nach Logout zurück zur Start-Seite
   };
 
   return (
