@@ -31,10 +31,13 @@ export default function Dashboard() {
 
     const run = async () => {
       try {
-        const editParam = router.query.edit === "1" || router.query.edit === "true";
+        const editParam =
+          router.query.edit === "1" || router.query.edit === "true";
         setEditing(editParam);
 
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (!session?.user) {
           router.push("/login");
           return;
@@ -59,7 +62,13 @@ export default function Dashboard() {
             children_ages: [],
           });
         } else {
-          setProfile(data);
+          setProfile({
+            ...data,
+            // falls null oder ungültig: leeres Array setzen
+            children_ages: Array.isArray(data.children_ages)
+              ? data.children_ages
+              : [],
+          });
         }
 
         setLoading(false);
@@ -77,7 +86,10 @@ export default function Dashboard() {
 
   const handleSave = async () => {
     if (!user || !profile) return;
-    const { error } = await supabase.from("profiles").upsert(profile, { onConflict: "id" }).eq("id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .upsert(profile, { onConflict: "id" })
+      .eq("id", user.id);
     if (error) {
       alert("Fehler beim Speichern: " + error.message);
     } else {
@@ -91,7 +103,13 @@ export default function Dashboard() {
   if (!user) return <p style={{ textAlign: "center" }}>Nicht eingeloggt</p>;
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#f7f8fa" }}>
+    <div
+      style={{
+        fontFamily: "Arial, sans-serif",
+        minHeight: "100vh",
+        backgroundColor: "#f7f8fa",
+      }}
+    >
       <NavBar />
       <div
         style={{
@@ -103,18 +121,42 @@ export default function Dashboard() {
           boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
         }}
       >
-        <h1 style={{ textAlign: "center", marginBottom: "30px", color: "#333" }}>
+        <h1
+          style={{
+            textAlign: "center",
+            marginBottom: "30px",
+            color: "#333",
+          }}
+        >
           Willkommen, {profile?.full_name || user?.email}
         </h1>
 
         {!editing ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            <p><strong>Name:</strong> {profile?.full_name || "—"}</p>
-            <p><strong>Geburtsdatum:</strong> {profile?.birthdate || "—"}</p>
-            <p><strong>Alter:</strong> {calculateAge(profile?.birthdate)}</p>
-            <p><strong>Anzahl Kinder:</strong> {profile?.num_children ?? "—"}</p>
-            <p><strong>Kinderalter:</strong> {Array.isArray(profile?.children_ages) ? profile.children_ages.join(", ") : "—"}</p>
-            <p><strong>Wohnort:</strong> {profile?.city || "—"}</p>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+          >
+            <p>
+              <strong>Name:</strong> {profile?.full_name || "—"}
+            </p>
+            <p>
+              <strong>Geburtsdatum:</strong> {profile?.birthdate || "—"}
+            </p>
+            <p>
+              <strong>Alter:</strong> {calculateAge(profile?.birthdate)}
+            </p>
+            <p>
+              <strong>Anzahl Kinder:</strong> {profile?.num_children ?? "—"}
+            </p>
+            <p>
+              <strong>Kinderalter:</strong>{" "}
+              {Array.isArray(profile?.children_ages) &&
+              profile.children_ages.length > 0
+                ? profile.children_ages.join(", ")
+                : "—"}
+            </p>
+            <p>
+              <strong>Wohnort:</strong> {profile?.city || "—"}
+            </p>
 
             <button
               onClick={() => setEditing(true)}
@@ -144,45 +186,91 @@ export default function Dashboard() {
             <input
               type="text"
               value={profile?.full_name || ""}
-              onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
+              onChange={(e) =>
+                setProfile({ ...profile, full_name: e.target.value })
+              }
+              style={{
+                padding: "10px",
+                borderRadius: "8px",
+                border: "1px solid #ccc",
+                fontSize: "16px",
+              }}
             />
 
             <label style={{ fontWeight: 600 }}>Geburtsdatum:</label>
             <input
               type="date"
               value={profile?.birthdate || ""}
-              onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
-              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
+              onChange={(e) =>
+                setProfile({ ...profile, birthdate: e.target.value })
+              }
+              style={{
+                padding: "10px",
+                borderRadius: "8px",
+                border: "1px solid #ccc",
+                fontSize: "16px",
+              }}
             />
 
             <label style={{ fontWeight: 600 }}>Anzahl Kinder:</label>
             <input
               type="number"
               value={profile?.num_children || 0}
-              onChange={(e) => setProfile({ ...profile, num_children: parseInt(e.target.value || "0") })}
-              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
-            />
-
-            <label style={{ fontWeight: 600 }}>Kinderalter (z.B. 3,5,8):</label>
-            <input
-              type="text"
-              value={Array.isArray(profile?.children_ages) ? profile.children_ages.join(",") : ""}
               onChange={(e) =>
                 setProfile({
                   ...profile,
-                  children_ages: e.target.value.split(",").map((s) => parseInt(s.trim()) || 0),
+                  num_children: parseInt(e.target.value || "0"),
                 })
               }
-              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
+              style={{
+                padding: "10px",
+                borderRadius: "8px",
+                border: "1px solid #ccc",
+                fontSize: "16px",
+              }}
+            />
+
+            <label style={{ fontWeight: 600 }}>
+              Kinderalter (z.B. 3,5,8):
+            </label>
+            <input
+              type="text"
+              value={
+                Array.isArray(profile?.children_ages) &&
+                profile.children_ages.length > 0
+                  ? profile.children_ages.join(",")
+                  : ""
+              }
+              onChange={(e) =>
+                setProfile({
+                  ...profile,
+                  children_ages: e.target.value
+                    .split(",")
+                    .map((s) => parseInt(s.trim()))
+                    .filter((n) => !isNaN(n)),
+                })
+              }
+              style={{
+                padding: "10px",
+                borderRadius: "8px",
+                border: "1px solid #ccc",
+                fontSize: "16px",
+              }}
             />
 
             <label style={{ fontWeight: 600 }}>Wohnort:</label>
             <input
               type="text"
               value={profile?.city || ""}
-              onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
+              onChange={(e) =>
+                setProfile({ ...profile, city: e.target.value })
+              }
+              style={{
+                padding: "10px",
+                borderRadius: "8px",
+                border: "1px solid #ccc",
+                fontSize: "16px",
+              }}
             />
 
             <div></div>
@@ -225,5 +313,4 @@ export default function Dashboard() {
 
 
 
-
-            
+                          
