@@ -62,8 +62,6 @@ export default function Dashboard() {
           setProfile(data);
         }
 
-        console.log("Geladenes Profil:", data);
-
         setLoading(false);
 
         if (isProfileComplete(data) && !editParam) {
@@ -95,7 +93,16 @@ export default function Dashboard() {
   return (
     <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#f7f8fa" }}>
       <NavBar />
-      <div style={{ maxWidth: "600px", margin: "50px auto", padding: "30px", backgroundColor: "#fff", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+      <div
+        style={{
+          maxWidth: "700px",
+          margin: "50px auto",
+          padding: "30px",
+          backgroundColor: "#fff",
+          borderRadius: "12px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        }}
+      >
         <h1 style={{ textAlign: "center", marginBottom: "30px", color: "#333" }}>
           Willkommen, {profile?.full_name || user?.email}
         </h1>
@@ -111,30 +118,112 @@ export default function Dashboard() {
 
             <button
               onClick={() => setEditing(true)}
-              style={{ marginTop: "20px", padding: "12px 20px", backgroundColor: "#4f46e5", color: "#fff", fontWeight: 600, border: "none", borderRadius: "10px" }}
+              style={{
+                marginTop: "20px",
+                padding: "12px 20px",
+                backgroundColor: "#4f46e5",
+                color: "#fff",
+                fontWeight: 600,
+                border: "none",
+                borderRadius: "10px",
+              }}
             >
               Profil bearbeiten
             </button>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            <input type="text" placeholder="Name" value={profile?.full_name || ""} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} />
-            <input type="date" placeholder="Geburtsdatum" value={profile?.birthdate || ""} onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })} />
-            <input type="number" placeholder="Anzahl Kinder" value={profile?.num_children || 0} onChange={(e) => setProfile({ ...profile, num_children: parseInt(e.target.value || "0") })} />
-            <input type="text" placeholder="Kinderalter (z.B. 3,5,8)" value={Array.isArray(profile?.children_ages) ? profile.children_ages.join(",") : ""} onChange={(e) => setProfile({ ...profile, children_ages: e.target.value.split(",").map((s) => parseInt(s.trim()) || 0) })} />
-            <input type="text" placeholder="Wohnort" value={profile?.city || ""} onChange={(e) => setProfile({ ...profile, city: e.target.value })} />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 2fr",
+              gap: "15px 20px",
+              alignItems: "center",
+            }}
+          >
+            <label style={{ fontWeight: 600 }}>Name:</label>
+            <input
+              type="text"
+              value={profile?.full_name || ""}
+              onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
+            />
 
-            <button onClick={handleSave} style={{ marginTop: "20px", padding: "12px 20px", backgroundColor: "#4f46e5", color: "#fff", fontWeight: 600, border: "none", borderRadius: "10px" }}>
-              Speichern
-            </button>
-            <button onClick={() => setEditing(false)} style={{ marginTop: "10px", padding: "12px 20px", backgroundColor: "#ccc", color: "#333", border: "none", borderRadius: "10px" }}>
-              Abbrechen
-            </button>
+            <label style={{ fontWeight: 600 }}>Geburtsdatum:</label>
+            <input
+              type="date"
+              value={profile?.birthdate || ""}
+              onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
+            />
+
+            <label style={{ fontWeight: 600 }}>Anzahl Kinder:</label>
+            <input
+              type="number"
+              value={profile?.num_children || 0}
+              onChange={(e) => setProfile({ ...profile, num_children: parseInt(e.target.value || "0") })}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
+            />
+
+            <label style={{ fontWeight: 600 }}>Kinderalter (z.B. 3,5,8):</label>
+            <input
+              type="text"
+              value={Array.isArray(profile?.children_ages) ? profile.children_ages.join(",") : ""}
+              onChange={(e) =>
+                setProfile({
+                  ...profile,
+                  children_ages: e.target.value.split(",").map((s) => parseInt(s.trim()) || 0),
+                })
+              }
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
+            />
+
+            <label style={{ fontWeight: 600 }}>Wohnort:</label>
+            <input
+              type="text"
+              value={profile?.city || ""}
+              onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "16px" }}
+            />
+
+            <div></div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                onClick={handleSave}
+                style={{
+                  padding: "12px 20px",
+                  backgroundColor: "#4f46e5",
+                  color: "#fff",
+                  fontWeight: 600,
+                  border: "none",
+                  borderRadius: "10px",
+                  flex: 1,
+                }}
+              >
+                Speichern
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                style={{
+                  padding: "12px 20px",
+                  backgroundColor: "#ccc",
+                  color: "#333",
+                  border: "none",
+                  borderRadius: "10px",
+                  flex: 1,
+                }}
+              >
+                Abbrechen
+              </button>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
-                                                                                                                                                                                       }
+}
 
 
+
+
+
+            
