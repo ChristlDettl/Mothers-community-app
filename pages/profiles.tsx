@@ -5,7 +5,7 @@ import NavBar from "../components/NavBar";
 
 // Alter berechnen
 function calculateAge(birthDate: string) {
-  if (!birthDate) return "—";
+  if (!birthDate) return 0;
   const birth = new Date(birthDate);
   const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
@@ -23,8 +23,10 @@ export default function Profiles() {
   const [searchName, setSearchName] = useState("");
   const [searchCity, setSearchCity] = useState("");
   const [searchGender, setSearchGender] = useState(""); // junge | mädchen | keine Angabe
-  const [minAge, setMinAge] = useState("");
-  const [maxAge, setMaxAge] = useState("");
+  const [minChildAge, setMinChildAge] = useState("");
+  const [maxChildAge, setMaxChildAge] = useState("");
+  const [minMotherAge, setMinMotherAge] = useState("");
+  const [maxMotherAge, setMaxMotherAge] = useState("");
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -48,38 +50,58 @@ export default function Profiles() {
   useEffect(() => {
     let results = [...profiles];
 
+    // Name
     if (searchName) {
       results = results.filter((p) =>
         p.full_name?.toLowerCase().includes(searchName.toLowerCase())
       );
     }
 
+    // Stadt
     if (searchCity) {
       results = results.filter((p) =>
         p.city?.toLowerCase().includes(searchCity.toLowerCase())
       );
     }
 
+    // Kinder-Geschlecht
     if (searchGender) {
       results = results.filter((p) =>
         p.children?.some((c: any) => c.gender === searchGender)
       );
     }
 
-    if (minAge) {
+    // Kinder-Alter
+    if (minChildAge) {
       results = results.filter((p) =>
-        p.children?.some((c: any) => c.age >= parseInt(minAge))
+        p.children?.some((c: any) => c.age >= parseInt(minChildAge))
+      );
+    }
+    if (maxChildAge) {
+      results = results.filter((p) =>
+        p.children?.some((c: any) => c.age <= parseInt(maxChildAge))
       );
     }
 
-    if (maxAge) {
-      results = results.filter((p) =>
-        p.children?.some((c: any) => c.age <= parseInt(maxAge))
-      );
+    // Mutter-Alter
+    if (minMotherAge) {
+      results = results.filter((p) => calculateAge(p.birthdate) >= parseInt(minMotherAge));
+    }
+    if (maxMotherAge) {
+      results = results.filter((p) => calculateAge(p.birthdate) <= parseInt(maxMotherAge));
     }
 
     setFilteredProfiles(results);
-  }, [searchName, searchCity, searchGender, minAge, maxAge, profiles]);
+  }, [
+    searchName,
+    searchCity,
+    searchGender,
+    minChildAge,
+    maxChildAge,
+    minMotherAge,
+    maxMotherAge,
+    profiles,
+  ]);
 
   if (loading) return <p style={{ textAlign: "center" }}>Lade Profile...</p>;
 
@@ -112,6 +134,20 @@ export default function Profiles() {
             onChange={(e) => setSearchCity(e.target.value)}
             style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
           />
+          <input
+            type="number"
+            placeholder="Mindestalter Mutter"
+            value={minMotherAge}
+            onChange={(e) => setMinMotherAge(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <input
+            type="number"
+            placeholder="Höchstalter Mutter"
+            value={maxMotherAge}
+            onChange={(e) => setMaxMotherAge(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
           <select
             value={searchGender}
             onChange={(e) => setSearchGender(e.target.value)}
@@ -124,16 +160,16 @@ export default function Profiles() {
           </select>
           <input
             type="number"
-            placeholder="Mindestalter"
-            value={minAge}
-            onChange={(e) => setMinAge(e.target.value)}
+            placeholder="Mindestalter Kind"
+            value={minChildAge}
+            onChange={(e) => setMinChildAge(e.target.value)}
             style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
           />
           <input
             type="number"
-            placeholder="Höchstalter"
-            value={maxAge}
-            onChange={(e) => setMaxAge(e.target.value)}
+            placeholder="Höchstalter Kind"
+            value={maxChildAge}
+            onChange={(e) => setMaxChildAge(e.target.value)}
             style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
           />
         </div>
@@ -172,6 +208,7 @@ export default function Profiles() {
       </div>
     </div>
   );
-}
+                }
+
 
 
