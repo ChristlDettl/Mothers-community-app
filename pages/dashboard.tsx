@@ -92,12 +92,32 @@ export default function Dashboard() {
   }, [router.isReady]);
 
   const handleSave = async () => {
-    if (!user || !profile) return;
+  if (!user || !profile) return;
 
-    // Profil speichern
+  try {
+    // 1. Geocoding: Wohnort in Latitude & Longitude umwandeln
+    let latitude = profile.latitude;
+    let longitude = profile.longitude;
+
+    if (profile.city) {
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          profile.city
+        )}`
+      );
+      const geoData = await geoRes.json();
+      if (geoData && geoData.length > 0) {
+        latitude = parseFloat(geoData[0].lat);
+        longitude = parseFloat(geoData[0].lon);
+      }
+    }
+
+    const profileToSave = { ...profile, latitude, longitude };
+
+    // 2. Profil speichern
     const { error: profileError } = await supabase
       .from("profiles")
-      .upsert(profile, { onConflict: "id" })
+      .upsert(profileToSave, { onConflict: "id" })
       .eq("id", user.id);
 
     if (profileError) {
@@ -105,7 +125,7 @@ export default function Dashboard() {
       return;
     }
 
-    // Kinder speichern: zuerst löschen, dann neu einfügen
+    // 3. Kinder speichern: zuerst löschen, dann neu einfügen
     await supabase.from("children").delete().eq("profile_id", user.id);
 
     if (children.length > 0) {
@@ -120,9 +140,15 @@ export default function Dashboard() {
     }
 
     alert("Profil gespeichert!");
+    setProfile(profileToSave);
     setEditing(false);
     if (isProfileComplete(profile)) router.push("/main");
-  };
+  } catch (err) {
+    console.error("Fehler beim Geocoding/Speichern:", err);
+    alert("Fehler beim Speichern des Profils");
+  }
+};
+  
 
   if (loading) return <p style={{ textAlign: "center" }}>Lade...</p>;
   if (!user) return <p style={{ textAlign: "center" }}>Nicht eingeloggt</p>;
