@@ -75,6 +75,23 @@ export default function Main() {
           >
             Profil bearbeiten
           </button>
+          {/* Neue: Alle Mütter anzeigen */}
+          <button
+            onClick={() => router.push("/profiles")}
+            style={{
+              marginTop: "15px",
+              padding: "12px 20px",
+              backgroundColor: "#4f46e5",
+              color: "#fff",
+              fontWeight: 600,
+              border: "none",
+              borderRadius: "10px",
+              width: "100%",
+              maxWidth: "300px",
+            }}
+          >
+            Alle Mütter anzeigen
+          </button>
         </div>
       </div>
     </div>
