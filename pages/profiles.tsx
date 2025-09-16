@@ -14,32 +14,61 @@ function calculateAge(birthDate: string) {
   return age;
 }
 
+// Entfernung zwischen zwei Punkten (Haversine)
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Erdradius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function Profiles() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [userProfile, setUserProfile] = useState<any>(null);
+
   // Such- und Filterstates
   const [searchName, setSearchName] = useState("");
-  const [searchCity, setSearchCity] = useState("");
   const [searchGender, setSearchGender] = useState(""); // junge | mädchen | keine Angabe
   const [minChildAge, setMinChildAge] = useState("");
   const [maxChildAge, setMaxChildAge] = useState("");
   const [minMotherAge, setMinMotherAge] = useState("");
   const [maxMotherAge, setMaxMotherAge] = useState("");
+  const [maxDistance, setMaxDistance] = useState(""); // km
 
   useEffect(() => {
     const fetchProfiles = async () => {
+      const {
+        data: me,
+        error: meError,
+      } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", supabase.auth.user()?.id)
+        .single();
+
+      if (meError) console.error("Fehler beim Laden des eigenen Profils:", meError);
+      else setUserProfile(me);
+
       const { data: profilesData, error } = await supabase
         .from("profiles")
-        .select("id, full_name, birthdate, city, children(*)"); // 👈 Lade Kinder
+        .select("id, full_name, birthdate, latitude, longitude, children(*)"); // 👈 Lade Kinder + Koordinaten
 
-      if (error) {
-        console.error("Fehler beim Laden der Profile:", error);
-      } else {
+      if (error) console.error("Fehler beim Laden der Profile:", error);
+      else {
         setProfiles(profilesData || []);
         setFilteredProfiles(profilesData || []);
       }
+
       setLoading(false);
     };
 
@@ -57,11 +86,22 @@ export default function Profiles() {
       );
     }
 
-    // Stadt
-    if (searchCity) {
-      results = results.filter((p) =>
-        p.city?.toLowerCase().includes(searchCity.toLowerCase())
-      );
+    // Entfernung
+    if (
+      maxDistance &&
+      userProfile?.latitude &&
+      userProfile?.longitude
+    ) {
+      results = results.filter((p) => {
+        if (!p.latitude || !p.longitude) return false;
+        const distance = getDistanceFromLatLonInKm(
+          userProfile.latitude,
+          userProfile.longitude,
+          p.latitude,
+          p.longitude
+        );
+        return distance <= parseFloat(maxDistance);
+      });
     }
 
     // Kinder-Geschlecht
@@ -94,13 +134,14 @@ export default function Profiles() {
     setFilteredProfiles(results);
   }, [
     searchName,
-    searchCity,
     searchGender,
     minChildAge,
     maxChildAge,
     minMotherAge,
     maxMotherAge,
+    maxDistance,
     profiles,
+    userProfile,
   ]);
 
   if (loading) return <p style={{ textAlign: "center" }}>Lade Profile...</p>;
@@ -125,13 +166,6 @@ export default function Profiles() {
             placeholder="Name suchen"
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
-            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
-          />
-          <input
-            type="text"
-            placeholder="Stadt suchen"
-            value={searchCity}
-            onChange={(e) => setSearchCity(e.target.value)}
             style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
           />
           <input
@@ -172,6 +206,13 @@ export default function Profiles() {
             onChange={(e) => setMaxChildAge(e.target.value)}
             style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
           />
+          <input
+            type="number"
+            placeholder="Maximale Entfernung (km)"
+            value={maxDistance}
+            onChange={(e) => setMaxDistance(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
         </div>
 
         {/* Profile-Übersicht */}
@@ -187,7 +228,6 @@ export default function Profiles() {
             }}
           >
             <h2>{profile.full_name || "Anonyme Mutter"}</h2>
-            <p><strong>Wohnort:</strong> {profile.city || "—"}</p>
             <p><strong>Alter:</strong> {calculateAge(profile.birthdate)}</p>
             <div>
               <strong>Kinder:</strong>
@@ -208,7 +248,8 @@ export default function Profiles() {
       </div>
     </div>
   );
-                }
+}
+
 
 
 
