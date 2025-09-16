@@ -175,7 +175,9 @@ export default function Dashboard() {
             <ul>
               {children.length > 0 ? (
                 children.map((child, i) => (
-                  <li key={child.id || i}>Kind {i + 1}: {child.age} Jahre</li>
+                  <li key={child.id || i}>
+                    Kind {i + 1}: {child.age} Jahre
+                  </li>
                 ))
               ) : (
                 <li>Keine Kinder eingetragen</li>
@@ -256,55 +258,84 @@ export default function Dashboard() {
 
             {/* Kinder-Eingaben */}
             <label style={{ fontWeight: 600 }}>Kinder:</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+              }}
+            >
               {children.map((child, i) => (
-                <div key={child.id || i} style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                  <span>Kind {i + 1}:</span>
-                  <input
-                    type="number"
-                    value={child.age || ""}
-                    onChange={(e) => {
-                      const newChildren = [...children];
-                      newChildren[i] = {
-                        ...newChildren[i],
-                        age: parseInt(e.target.value || "0"),
-                      };
-                      setChildren(newChildren);
-                    }}
+                <div
+                  key={child.id || i}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "5px",
+                  }}
+                >
+                  <div
                     style={{
-                      padding: "8px",
-                      borderRadius: "8px",
-                      border: "1px solid #ccc",
-                      fontSize: "14px",
-                      width: "80px",
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setChildren(children.filter((_, idx) => idx !== i))
-                    }
-                    style={{
-                      padding: "6px 10px",
-                      backgroundColor: "#f87171",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "6px",
+                      display: "flex",
+                      gap: "10px",
+                      alignItems: "center",
                     }}
                   >
-                    ❌
-                  </button>
+                    <span>Kind {i + 1}:</span>
+                    <input
+                      type="number"
+                      placeholder="z. B. 5"
+                      value={child.age || ""}
+                      onChange={(e) => {
+                        const newChildren = [...children];
+                        newChildren[i] = {
+                          ...newChildren[i],
+                          age: parseInt(e.target.value || "0"),
+                        };
+                        setChildren(newChildren);
+                      }}
+                      style={{
+                        padding: "8px",
+                        borderRadius: "8px",
+                        border: "1px solid #ccc",
+                        fontSize: "14px",
+                        width: "80px",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setChildren(children.filter((_, idx) => idx !== i))
+                      }
+                      style={{
+                        padding: "6px 10px",
+                        backgroundColor: "#f87171",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      ❌
+                    </button>
+                  </div>
+                  <small style={{ color: "#666", marginLeft: "65px" }}>
+                    Bitte trage hier das Alter deines Kindes in Jahren ein.
+                  </small>
                 </div>
               ))}
               <button
                 type="button"
-                onClick={() => setChildren([...children, { profile_id: user.id, age: 0 }])}
+                onClick={() =>
+                  setChildren([...children, { profile_id: user.id, age: 0 }])
+                }
                 style={{
                   padding: "8px 12px",
                   borderRadius: "8px",
                   backgroundColor: "#eee",
                   border: "1px solid #ccc",
                   fontSize: "14px",
+                  marginTop: "5px",
+                  alignSelf: "flex-start",
                 }}
               >
                 ➕ Kind hinzufügen
@@ -346,7 +377,6 @@ export default function Dashboard() {
       </div>
     </div>
   );
-            }
-
+}
 
 
