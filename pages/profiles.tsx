@@ -3,6 +3,17 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
 
+// Alter berechnen
+function calculateAge(birthDate: string) {
+  if (!birthDate) return "—";
+  const birth = new Date(birthDate);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
 export default function Profiles() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<any[]>([]);
@@ -141,7 +152,7 @@ export default function Profiles() {
           >
             <h2>{profile.full_name || "Anonyme Mutter"}</h2>
             <p><strong>Wohnort:</strong> {profile.city || "—"}</p>
-            <p><strong>Geburtsdatum:</strong> {profile.birthdate || "—"}</p>
+            <p><strong>Alter:</strong> {calculateAge(profile.birthdate)}</p>
             <div>
               <strong>Kinder:</strong>
               {profile.children && profile.children.length > 0 ? (
@@ -161,6 +172,6 @@ export default function Profiles() {
       </div>
     </div>
   );
-  }
+}
 
 
