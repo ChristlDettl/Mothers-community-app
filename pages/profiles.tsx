@@ -46,22 +46,33 @@ export default function Profiles() {
   const [maxDistance, setMaxDistance] = useState(""); // km
 
   useEffect(() => {
-    const fetchProfiles = async () => {
+  const fetchProfiles = async () => {
+    try {
+      // 1. Eigene User-Session abrufen
       const {
-        data: me,
-        error: meError,
-      } = await supabase
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) throw sessionError;
+
+      const userId = session?.user.id;
+      if (!userId) throw new Error("Nicht eingeloggt");
+
+      // 2. Eigenes Profil abrufen
+      const { data: me, error: meError } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", supabase.auth.user()?.id)
+        .eq("id", userId)
         .single();
 
       if (meError) console.error("Fehler beim Laden des eigenen Profils:", meError);
       else setUserProfile(me);
 
+      // 3. Alle Profile abrufen
       const { data: profilesData, error } = await supabase
         .from("profiles")
-        .select("id, full_name, birthdate, latitude, longitude, children(*)"); // 👈 Lade Kinder + Koordinaten
+        .select("id, full_name, birthdate, latitude, longitude, children(*)"); // Kinder + Koordinaten
 
       if (error) console.error("Fehler beim Laden der Profile:", error);
       else {
@@ -70,10 +81,16 @@ export default function Profiles() {
       }
 
       setLoading(false);
-    };
+    } catch (err) {
+      console.error("Fehler beim Laden der Profile:", err);
+      setLoading(false);
+    }
+  };
 
-    fetchProfiles();
-  }, []);
+  fetchProfiles();
+}, []);
+  
+  
 
   // Filterfunktion
   useEffect(() => {
