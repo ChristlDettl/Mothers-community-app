@@ -23,7 +23,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [children, setChildren] = useState<any[]>([]); // 👈 Kinder separat
+  const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
 
@@ -65,7 +65,7 @@ export default function Dashboard() {
           setProfile(profileData);
         }
 
-        // Kinder laden 👇
+        // Kinder laden
         const { data: childrenData, error: childrenError } = await supabase
           .from("children")
           .select("*")
@@ -176,7 +176,12 @@ export default function Dashboard() {
               {children.length > 0 ? (
                 children.map((child, i) => (
                   <li key={child.id || i}>
-                    Kind {i + 1}: {child.age} Jahre
+                    Kind {i + 1}: {child.age} Jahre{" "}
+                    {child.gender && child.gender !== "none"
+                      ? child.gender === "male"
+                        ? "(Junge)"
+                        : "(Mädchen)"
+                      : ""}
                   </li>
                 ))
               ) : (
@@ -279,9 +284,12 @@ export default function Dashboard() {
                       display: "flex",
                       gap: "10px",
                       alignItems: "center",
+                      flexWrap: "wrap",
                     }}
                   >
                     <span>Kind {i + 1}:</span>
+
+                    {/* Alter */}
                     <input
                       type="number"
                       placeholder="z. B. 5"
@@ -302,6 +310,30 @@ export default function Dashboard() {
                         width: "80px",
                       }}
                     />
+
+                    {/* Geschlecht */}
+                    <select
+                      value={child.gender || "none"}
+                      onChange={(e) => {
+                        const newChildren = [...children];
+                        newChildren[i] = {
+                          ...newChildren[i],
+                          gender: e.target.value,
+                        };
+                        setChildren(newChildren);
+                      }}
+                      style={{
+                        padding: "8px",
+                        borderRadius: "8px",
+                        border: "1px solid #ccc",
+                        fontSize: "14px",
+                      }}
+                    >
+                      <option value="none">Keine Angabe</option>
+                      <option value="male">Junge</option>
+                      <option value="female">Mädchen</option>
+                    </select>
+
                     <button
                       type="button"
                       onClick={() =>
@@ -319,14 +351,17 @@ export default function Dashboard() {
                     </button>
                   </div>
                   <small style={{ color: "#666", marginLeft: "65px" }}>
-                    Bitte trage hier das Alter deines Kindes in Jahren ein.
+                    Bitte trage hier das Alter deines Kindes in Jahren ein und wähle das Geschlecht.
                   </small>
                 </div>
               ))}
               <button
                 type="button"
                 onClick={() =>
-                  setChildren([...children, { profile_id: user.id, age: 0 }])
+                  setChildren([
+                    ...children,
+                    { profile_id: user.id, age: 0, gender: "none" },
+                  ])
                 }
                 style={{
                   padding: "8px 12px",
@@ -377,6 +412,6 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
+                      }
 
 
