@@ -13,64 +13,27 @@ export default function Register() {
     e.preventDefault();
     setError(null);
 
-    // 1️⃣ Registrierung beim Auth-System
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    try {
+      // 1️⃣ Registrierung beim Auth-System
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
 
-    if (signUpError) {
-      console.error("Signup-Error:", signUpError);
-      setError(signUpError.message);
-      return;
-    }
-
-    if (data.user) {
-      try {
-        console.log("👉 Versuche Profil anzulegen für:", {
-          id: data.user.id,
-          email: data.user.email,
-        });
-
-        // 2️⃣ Prüfen, ob Profil schon existiert
-        const { data: existingProfile, error: fetchError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("id", data.user.id)
-          .single();
-
-        if (fetchError && fetchError.code !== "PGRST116") {
-          console.error("❌ Fehler beim Überprüfen des Profils:", fetchError);
-          setError("Fehler beim Überprüfen des Profils");
-          return;
-        }
-
-        // 3️⃣ Profil anlegen, wenn noch nicht vorhanden
-        if (!existingProfile) {
-          const { error: insertError } = await supabase
-            .from("profiles")
-            .insert([
-              {
-                email: data.user.email,  // nur E-Mail, alles andere später im Dashboard
-              },
-            ]);
-
-          if (insertError) {
-            console.error("❌ Insert-Fehler:", insertError);
-            // JSON-Fehlerdump für Debug
-            setError(
-              "Fehler beim Anlegen des Profils:\n" +
-                JSON.stringify(insertError, null, 2)
-            );
-            return;
-          }
-        }
-
-        setSuccess(true);
-      } catch (err) {
-        console.error("❌ Unerwarteter Fehler:", err);
-        setError("Unerwarteter Fehler beim Anlegen des Profils");
+      if (signUpError) {
+        console.error("Signup-Error:", signUpError);
+        setError(signUpError.message);
+        return;
       }
+
+      // ✅ Signup erfolgreich
+      console.log("User erfolgreich registriert:", data.user);
+
+      // Hinweis an den User: Profil wird später angelegt
+      setSuccess(true);
+    } catch (err) {
+      console.error("❌ Unerwarteter Fehler beim Signup:", err);
+      setError("Unerwarteter Fehler beim Signup");
     }
   };
 
@@ -80,7 +43,10 @@ export default function Register() {
       <div style={{ padding: 20 }}>
         <h1>Registrieren</h1>
         {success ? (
-          <p>Registrierung erfolgreich! Bitte bestätige deine E-Mail.</p>
+          <p>
+            Registrierung erfolgreich! Bitte bestätige deine E-Mail. Dein Profil
+            wird beim ersten Login im Dashboard automatisch erstellt.
+          </p>
         ) : (
           <form onSubmit={handleRegister}>
             <input
@@ -117,4 +83,5 @@ export default function Register() {
     </>
   );
 }
+
 
