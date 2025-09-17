@@ -49,7 +49,6 @@ export default function Register() {
             .from("profiles")
             .insert([
               {
-                id: data.user.id,
                 email: data.user.email,
               },
             ]);
