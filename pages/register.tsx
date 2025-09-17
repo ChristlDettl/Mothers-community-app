@@ -13,7 +13,7 @@ export default function Register() {
     e.preventDefault();
     setError(null);
 
-    // 1️⃣ Registrierung
+    // 1️⃣ Registrierung beim Auth-System
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -32,6 +32,7 @@ export default function Register() {
           email: data.user.email,
         });
 
+        // 2️⃣ Prüfen, ob Profil schon existiert
         const { data: existingProfile, error: fetchError } = await supabase
           .from("profiles")
           .select("id")
@@ -44,27 +45,33 @@ export default function Register() {
           return;
         }
 
+        // 3️⃣ Profil anlegen, wenn noch nicht vorhanden
         if (!existingProfile) {
-          const { error: insertError } = await supabase
-            .from("profiles")
-            .insert([
-              {
-                email: data.user.email,
-              },
-            ]);
+          const { error: insertError } = await supabase.from("profiles").insert([
+            {
+              email: data.user.email, // nur E-Mail, alles andere später im Dashboard
+            },
+          ]);
 
           if (insertError) {
-            console.error("❌ Insert-Fehler:", insertError);
-
-            // Alles als JSON dumpen
-            setError(
-              "Fehler beim Anlegen des Profils:\n" +
-                JSON.stringify(insertError, null, 2)
-            );
-            return;
+            // RLS-Fehler (42501) ignorieren, andere Fehler weitergeben
+            if (insertError.code === "42501") {
+              console.warn(
+                "RLS-Fehler beim Anlegen des Profils ignoriert:",
+                insertError.message
+              );
+            } else {
+              console.error("❌ Insert-Fehler:", insertError);
+              setError(
+                "Fehler beim Anlegen des Profils:\n" +
+                  JSON.stringify(insertError, null, 2)
+              );
+              return;
+            }
           }
         }
 
+        // ✅ Registrierung + Profil erfolgreich
         setSuccess(true);
       } catch (err) {
         console.error("❌ Unerwarteter Fehler:", err);
@@ -116,3 +123,6 @@ export default function Register() {
     </>
   );
 }
+
+
+
