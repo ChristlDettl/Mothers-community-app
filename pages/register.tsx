@@ -47,31 +47,26 @@ export default function Register() {
 
         // 3️⃣ Profil anlegen, wenn noch nicht vorhanden
         if (!existingProfile) {
-          const { error: insertError } = await supabase.from("profiles").insert([
-            {
-              email: data.user.email, // nur E-Mail, alles andere später im Dashboard
-            },
-          ]);
+          const { error: insertError } = await supabase
+            .from("profiles")
+            .insert([
+              {
+                id: data.user.id,        // 👈 ID setzen, passt zur RLS-Policy
+                email: data.user.email,  // nur E-Mail, alles andere später im Dashboard
+              },
+            ]);
 
           if (insertError) {
-            // RLS-Fehler (42501) ignorieren, andere Fehler weitergeben
-            if (insertError.code === "42501") {
-              console.warn(
-                "RLS-Fehler beim Anlegen des Profils ignoriert:",
-                insertError.message
-              );
-            } else {
-              console.error("❌ Insert-Fehler:", insertError);
-              setError(
-                "Fehler beim Anlegen des Profils:\n" +
-                  JSON.stringify(insertError, null, 2)
-              );
-              return;
-            }
+            console.error("❌ Insert-Fehler:", insertError);
+            // JSON-Fehlerdump für Debug
+            setError(
+              "Fehler beim Anlegen des Profils:\n" +
+                JSON.stringify(insertError, null, 2)
+            );
+            return;
           }
         }
 
-        // ✅ Registrierung + Profil erfolgreich
         setSuccess(true);
       } catch (err) {
         console.error("❌ Unerwarteter Fehler:", err);
@@ -123,6 +118,4 @@ export default function Register() {
     </>
   );
 }
-
-
 
