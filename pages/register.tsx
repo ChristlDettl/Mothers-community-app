@@ -13,7 +13,7 @@ export default function Register() {
     e.preventDefault();
     setError(null);
 
-    // 1️⃣ Registrierung beim Auth-System
+    // 1️⃣ Registrierung
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -27,7 +27,11 @@ export default function Register() {
 
     if (data.user) {
       try {
-        // 2️⃣ Prüfen, ob Profil schon existiert (nach User-ID)
+        console.log("👉 Versuche Profil anzulegen für:", {
+          id: data.user.id,
+          email: data.user.email,
+        });
+
         const { data: existingProfile, error: fetchError } = await supabase
           .from("profiles")
           .select("id")
@@ -35,41 +39,36 @@ export default function Register() {
           .single();
 
         if (fetchError && fetchError.code !== "PGRST116") {
-          console.error("Fehler beim Überprüfen des Profils:", fetchError);
+          console.error("❌ Fehler beim Überprüfen des Profils:", fetchError);
           setError("Fehler beim Überprüfen des Profils");
           return;
         }
 
-        // 3️⃣ Profil anlegen, wenn noch nicht vorhanden
         if (!existingProfile) {
           const { error: insertError } = await supabase
             .from("profiles")
             .insert([
               {
-                id: data.user.id,       // 👈 wichtig für RLS
-                email: data.user.email, // nur E-Mail, Rest später im Dashboard
+                id: data.user.id,
+                email: data.user.email,
               },
             ]);
 
           if (insertError) {
-            console.error("Fehler beim Anlegen des Profils:", insertError);
+            console.error("❌ Insert-Fehler:", insertError);
 
-            // 🔍 erweiterte Fehlerausgabe
+            // Alles als JSON dumpen
             setError(
-              "Fehler beim Anlegen des Profils: " +
-                insertError.message +
-                (insertError.details ? " | Details: " + insertError.details : "") +
-                (insertError.hint ? " | Hint: " + insertError.hint : "") +
-                (insertError.code ? " | Code: " + insertError.code : "")
+              "Fehler beim Anlegen des Profils:\n" +
+                JSON.stringify(insertError, null, 2)
             );
             return;
           }
         }
 
-        // ✅ Registrierung + Profil erfolgreich
         setSuccess(true);
       } catch (err) {
-        console.error("Unerwarteter Fehler:", err);
+        console.error("❌ Unerwarteter Fehler:", err);
         setError("Unerwarteter Fehler beim Anlegen des Profils");
       }
     }
@@ -99,13 +98,22 @@ export default function Register() {
               required
             />
             <button type="submit">Registrieren</button>
-            {error && <p style={{ color: "red", whiteSpace: "pre-wrap" }}>{error}</p>}
+            {error && (
+              <pre
+                style={{
+                  color: "red",
+                  whiteSpace: "pre-wrap",
+                  background: "#fee",
+                  padding: "10px",
+                  borderRadius: "5px",
+                }}
+              >
+                {error}
+              </pre>
+            )}
           </form>
         )}
       </div>
     </>
   );
-          }
-
-
-
+}
