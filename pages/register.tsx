@@ -47,14 +47,9 @@ export default function Register() {
             .from("profiles")
             .insert([
               {
-                email: data.user.email,
-                full_name: null,
-                birthdate: null,
-                city: null,
-                latitude: null,
-                longitude: null,
+                email: data.user.email, // nur die E-Mail, alles andere später im Dashboard
               },
-            ]); // ✅ Keine ID setzen, Supabase setzt auth.uid() automatisch
+            ]); // ✅ ID wird automatisch via RLS gesetzt
 
           if (insertError) {
             console.error("Fehler beim Anlegen des Profils:", insertError);
@@ -103,3 +98,4 @@ export default function Register() {
     </>
   );
 }
+
