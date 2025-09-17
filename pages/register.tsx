@@ -27,14 +27,13 @@ export default function Register() {
 
     if (data.user) {
       try {
-        // 2️⃣ Prüfen, ob Profil schon existiert
+        // 2️⃣ Prüfen, ob Profil schon existiert (nach User-ID)
         const { data: existingProfile, error: fetchError } = await supabase
           .from("profiles")
           .select("id")
-          .eq("email", data.user.email)
+          .eq("id", data.user.id)
           .single();
 
-        // Wenn ein unerwarteter Fehler auftritt
         if (fetchError && fetchError.code !== "PGRST116") {
           console.error("Fehler beim Überprüfen des Profils:", fetchError);
           setError("Fehler beim Überprüfen des Profils");
@@ -47,9 +46,10 @@ export default function Register() {
             .from("profiles")
             .insert([
               {
-                email: data.user.email, // nur die E-Mail, alles andere später im Dashboard
+                id: data.user.id,       // 👈 Wichtig für RLS
+                email: data.user.email, // nur E-Mail, alles andere später im Dashboard
               },
-            ]); // ✅ ID wird automatisch via RLS gesetzt
+            ]);
 
           if (insertError) {
             console.error("Fehler beim Anlegen des Profils:", insertError);
