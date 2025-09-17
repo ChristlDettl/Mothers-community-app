@@ -1,6 +1,7 @@
+// pages/register.tsx
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import NavBar from "../components/NavBar"; // Passe ggf. den Pfad an
+import NavBar from "../components/NavBar";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -12,24 +13,27 @@ export default function Register() {
     e.preventDefault();
     setError(null);
 
-    // Supabase Registrierung
-    const { data, error } = await supabase.auth.signUp({
+    // 1. Registrierung
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    if (error) {
-      setError(error.message);
+    if (signUpError) {
+      console.error("Signup-Error:", signUpError);
+      setError(signUpError.message);
       return;
     }
 
+    console.log("User nach Signup:", data.user);
+
     if (data.user) {
       try {
-        // Profil nur erstellen, wenn nicht vorhanden
+        // 2. Prüfen, ob schon ein Profil existiert (nach ID, nicht nach E-Mail!)
         const { data: existingProfile, error: fetchError } = await supabase
           .from("profiles")
           .select("id")
-          .eq("id", data.user.id) // 👈 Suche über user.id statt email
+          .eq("id", data.user.id)
           .single();
 
         if (fetchError && fetchError.code !== "PGRST116") {
@@ -38,9 +42,10 @@ export default function Register() {
           return;
         }
 
+        // 3. Nur anlegen, wenn noch nicht vorhanden
         if (!existingProfile) {
           const { error: insertError } = await supabase.from("profiles").insert({
-            id: data.user.id,
+            id: data.user.id, // 👈 hier garantiert die User-ID
             email: data.user.email,
             full_name: null,
             birthdate: null,
@@ -70,7 +75,7 @@ export default function Register() {
       <div style={{ padding: 20 }}>
         <h1>Registrieren</h1>
         {success ? (
-          <p>Registrierung erfolgreich! Bitte einloggen.</p>
+          <p>Registrierung erfolgreich! Bitte bestätige deine E-Mail.</p>
         ) : (
           <form onSubmit={handleRegister}>
             <input
@@ -95,4 +100,5 @@ export default function Register() {
     </>
   );
 }
+
 
