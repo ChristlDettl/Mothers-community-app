@@ -46,14 +46,22 @@ export default function Register() {
             .from("profiles")
             .insert([
               {
-                id: data.user.id,       // 👈 Wichtig für RLS
-                email: data.user.email, // nur E-Mail, alles andere später im Dashboard
+                id: data.user.id,       // 👈 wichtig für RLS
+                email: data.user.email, // nur E-Mail, Rest später im Dashboard
               },
             ]);
 
           if (insertError) {
             console.error("Fehler beim Anlegen des Profils:", insertError);
-            setError("Fehler beim Anlegen des Profils: " + insertError.message);
+
+            // 🔍 erweiterte Fehlerausgabe
+            setError(
+              "Fehler beim Anlegen des Profils: " +
+                insertError.message +
+                (insertError.details ? " | Details: " + insertError.details : "") +
+                (insertError.hint ? " | Hint: " + insertError.hint : "") +
+                (insertError.code ? " | Code: " + insertError.code : "")
+            );
             return;
           }
         }
@@ -91,11 +99,13 @@ export default function Register() {
               required
             />
             <button type="submit">Registrieren</button>
-            {error && <p style={{ color: "red" }}>{error}</p>}
+            {error && <p style={{ color: "red", whiteSpace: "pre-wrap" }}>{error}</p>}
           </form>
         )}
       </div>
     </>
   );
-}
+          }
+
+
 
