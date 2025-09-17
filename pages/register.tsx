@@ -13,7 +13,7 @@ export default function Register() {
     e.preventDefault();
     setError(null);
 
-    // 1. Registrierung beim Auth-System
+    // 1️⃣ Registrierung beim Auth-System
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -27,20 +27,21 @@ export default function Register() {
 
     if (data.user) {
       try {
-        // 2. Prüfen, ob Profil schon existiert (optional)
+        // 2️⃣ Prüfen, ob Profil schon existiert
         const { data: existingProfile, error: fetchError } = await supabase
           .from("profiles")
           .select("id")
-          .eq("email", data.user.email) // nach E-Mail prüfen
+          .eq("email", data.user.email)
           .single();
 
+        // Wenn ein unerwarteter Fehler auftritt
         if (fetchError && fetchError.code !== "PGRST116") {
           console.error("Fehler beim Überprüfen des Profils:", fetchError);
           setError("Fehler beim Überprüfen des Profils");
           return;
         }
 
-        // 3. Profil anlegen, wenn noch nicht vorhanden
+        // 3️⃣ Profil anlegen, wenn noch nicht vorhanden
         if (!existingProfile) {
           const { error: insertError } = await supabase
             .from("profiles")
@@ -53,7 +54,7 @@ export default function Register() {
                 latitude: null,
                 longitude: null,
               },
-            ]); // 👈 keine ID setzen, RLS übernimmt auth.uid()
+            ]); // ✅ Keine ID setzen, Supabase setzt auth.uid() automatisch
 
           if (insertError) {
             console.error("Fehler beim Anlegen des Profils:", insertError);
@@ -62,6 +63,7 @@ export default function Register() {
           }
         }
 
+        // ✅ Registrierung + Profil erfolgreich
         setSuccess(true);
       } catch (err) {
         console.error("Unerwarteter Fehler:", err);
