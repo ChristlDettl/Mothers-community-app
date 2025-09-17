@@ -51,7 +51,6 @@ export default function Register() {
             .from("profiles")
             .insert([
               {
-                id: data.user.id,        // 👈 ID setzen, passt zur RLS-Policy
                 email: data.user.email,  // nur E-Mail, alles andere später im Dashboard
               },
             ]);
