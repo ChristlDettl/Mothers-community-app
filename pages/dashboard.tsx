@@ -92,63 +92,62 @@ export default function Dashboard() {
   }, [router.isReady]);
 
   const handleSave = async () => {
-  if (!user || !profile) return;
+    if (!user || !profile) return;
 
-  try {
-    // 1. Geocoding: Wohnort in Latitude & Longitude umwandeln
-    let latitude = profile.latitude;
-    let longitude = profile.longitude;
+    try {
+      // 1. Geocoding
+      let latitude = profile.latitude;
+      let longitude = profile.longitude;
 
-    if (profile.city) {
-      const geoRes = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          profile.city
-        )}`
-      );
-      const geoData = await geoRes.json();
-      if (geoData && geoData.length > 0) {
-        latitude = parseFloat(geoData[0].lat);
-        longitude = parseFloat(geoData[0].lon);
+      if (profile.city) {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            profile.city
+          )}`
+        );
+        const geoData = await geoRes.json();
+        if (geoData && geoData.length > 0) {
+          latitude = parseFloat(geoData[0].lat);
+          longitude = parseFloat(geoData[0].lon);
+        }
       }
-    }
 
-    const profileToSave = { ...profile, latitude, longitude };
+      const profileToSave = { ...profile, latitude, longitude };
 
-    // 2. Profil speichern
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .upsert(profileToSave, { onConflict: "id" })
-      .eq("id", user.id);
+      // 2. Profil speichern
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .upsert(profileToSave, { onConflict: "id" })
+        .eq("id", user.id);
 
-    if (profileError) {
-      alert("Fehler beim Speichern: " + profileError.message);
-      return;
-    }
-
-    // 3. Kinder speichern: zuerst löschen, dann neu einfügen
-    await supabase.from("children").delete().eq("profile_id", user.id);
-
-    if (children.length > 0) {
-      const { error: childrenError } = await supabase
-        .from("children")
-        .insert(children.map((c) => ({ ...c, profile_id: user.id })));
-
-      if (childrenError) {
-        alert("Fehler beim Speichern der Kinder: " + childrenError.message);
+      if (profileError) {
+        alert("Fehler beim Speichern: " + profileError.message);
         return;
       }
-    }
 
-    alert("Profil gespeichert!");
-    setProfile(profileToSave);
-    setEditing(false);
-    if (isProfileComplete(profile)) router.push("/main");
-  } catch (err) {
-    console.error("Fehler beim Geocoding/Speichern:", err);
-    alert("Fehler beim Speichern des Profils");
-  }
-};
-  
+      // 3. Kinder speichern
+      await supabase.from("children").delete().eq("profile_id", user.id);
+
+      if (children.length > 0) {
+        const { error: childrenError } = await supabase
+          .from("children")
+          .insert(children.map((c) => ({ ...c, profile_id: user.id })));
+
+        if (childrenError) {
+          alert("Fehler beim Speichern der Kinder: " + childrenError.message);
+          return;
+        }
+      }
+
+      alert("Profil gespeichert!");
+      setProfile(profileToSave);
+      setEditing(false);
+      if (isProfileComplete(profile)) router.push("/main");
+    } catch (err) {
+      console.error("Fehler beim Geocoding/Speichern:", err);
+      alert("Fehler beim Speichern des Profils");
+    }
+  };
 
   if (loading) return <p style={{ textAlign: "center" }}>Lade...</p>;
   if (!user) return <p style={{ textAlign: "center" }}>Nicht eingeloggt</p>;
@@ -242,6 +241,7 @@ export default function Dashboard() {
               alignItems: "center",
             }}
           >
+            {/* Eingaben */}
             <label style={{ fontWeight: 600 }}>Name:</label>
             <input
               type="text"
@@ -287,7 +287,7 @@ export default function Dashboard() {
               }}
             />
 
-            {/* Kinder-Eingaben */}
+            {/* Kinder */}
             <label style={{ fontWeight: 600 }}>Kinder:</label>
             <div
               style={{
@@ -315,7 +315,6 @@ export default function Dashboard() {
                   >
                     <span>Kind {i + 1}:</span>
 
-                    {/* Alter */}
                     <input
                       type="number"
                       placeholder="z. B. 5"
@@ -337,7 +336,6 @@ export default function Dashboard() {
                       }}
                     />
 
-                    {/* Geschlecht */}
                     <select
                       value={child.gender || "none"}
                       onChange={(e) => {
@@ -377,7 +375,8 @@ export default function Dashboard() {
                     </button>
                   </div>
                   <small style={{ color: "#666", marginLeft: "65px" }}>
-                    Bitte trage hier das Alter deines Kindes in Jahren ein und wähle das Geschlecht.
+                    Bitte trage hier das Alter deines Kindes in Jahren ein und
+                    wähle das Geschlecht.
                   </small>
                 </div>
               ))}
@@ -433,11 +432,78 @@ export default function Dashboard() {
                 Abbrechen
               </button>
             </div>
+
+            {/* ⚠️ Account löschen Bereich */}
+            <div
+              style={{
+                gridColumn: "1 / span 2",
+                marginTop: "30px",
+                borderTop: "1px solid #eee",
+                paddingTop: "20px",
+              }}
+            >
+              <h3 style={{ color: "#b91c1c", marginBottom: "10px" }}>
+                ⚠️ Account löschen
+              </h3>
+              <p style={{ color: "#555", marginBottom: "15px" }}>
+                Wenn du dein Profil und deinen Account löschst, werden alle
+                deine Daten unwiderruflich entfernt. Dieser Vorgang kann nicht
+                rückgängig gemacht werden.
+              </p>
+              <button
+                onClick={async () => {
+                  const confirmed = window.confirm(
+                    "Bist du sicher, dass du dein Konto endgültig löschen möchtest?\n\n" +
+                      "Dieser Vorgang kann NICHT rückgängig gemacht werden!"
+                  );
+                  if (!confirmed) return;
+
+                  try {
+                    const {
+                      data: { user },
+                    } = await supabase.auth.getUser();
+                    if (!user) {
+                      alert("Kein Nutzer gefunden.");
+                      return;
+                    }
+
+                    const response = await fetch("/api/deleteAccount", {
+                      method: "DELETE",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ userId: user.id }),
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                      alert("Fehler beim Löschen: " + result.error);
+                      return;
+                    }
+
+                    alert("Dein Account wurde erfolgreich gelöscht.");
+                    await supabase.auth.signOut();
+                    router.push("/login");
+                  } catch (err: any) {
+                    alert("Unerwarteter Fehler: " + err.message);
+                  }
+                }}
+                style={{
+                  backgroundColor: "#dc2626",
+                  color: "#fff",
+                  padding: "12px 20px",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Profil & Account löschen
+              </button>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
-                      }
-
+}
 
