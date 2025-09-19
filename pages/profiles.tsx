@@ -14,9 +14,9 @@ function calculateAge(birthDate: string) {
   return age;
 }
 
-// Entfernung zwischen zwei Punkten (Haversine)
+// Entfernung berechnen
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // Erdradius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -38,38 +38,33 @@ export default function Profiles() {
 
   // Such- und Filterstates
   const [searchName, setSearchName] = useState("");
-  const [searchGender, setSearchGender] = useState(""); // junge | mädchen | keine Angabe
+  const [searchCity, setSearchCity] = useState(""); // NEU: Wohnort-Filter
+  const [searchGender, setSearchGender] = useState("");
   const [minChildAge, setMinChildAge] = useState("");
   const [maxChildAge, setMaxChildAge] = useState("");
   const [minMotherAge, setMinMotherAge] = useState("");
   const [maxMotherAge, setMaxMotherAge] = useState("");
-  const [maxDistance, setMaxDistance] = useState(""); // km
+  const [maxDistance, setMaxDistance] = useState("");
 
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        // 1. Eigene User-Session abrufen
         const {
           data: { session },
           error: sessionError,
         } = await supabase.auth.getSession();
-
         if (sessionError) throw sessionError;
 
         const userId = session?.user.id;
         if (!userId) throw new Error("Nicht eingeloggt");
 
-        // 2. Eigenes Profil abrufen
-        const { data: me, error: meError } = await supabase
+        const { data: me } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", userId)
           .single();
+        setUserProfile(me);
 
-        if (meError) console.error("Fehler beim Laden des eigenen Profils:", meError);
-        else setUserProfile(me);
-
-        // 3. Alle Profile abrufen (inkl. Wohnort city)
         const { data: profilesData, error } = await supabase
           .from("profiles")
           .select("id, full_name, birthdate, city, latitude, longitude, children(*)");
@@ -98,6 +93,13 @@ export default function Profiles() {
     if (searchName) {
       results = results.filter((p) =>
         p.full_name?.toLowerCase().includes(searchName.toLowerCase())
+      );
+    }
+
+    // Wohnort
+    if (searchCity) {
+      results = results.filter((p) =>
+        p.city?.toLowerCase().includes(searchCity.toLowerCase())
       );
     }
 
@@ -145,6 +147,7 @@ export default function Profiles() {
     setFilteredProfiles(results);
   }, [
     searchName,
+    searchCity,
     searchGender,
     minChildAge,
     maxChildAge,
@@ -177,6 +180,13 @@ export default function Profiles() {
             placeholder="Name suchen"
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <input
+            type="text"
+            placeholder="Wohnort suchen"
+            value={searchCity}
+            onChange={(e) => setSearchCity(e.target.value)}
             style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
           />
           <input
@@ -260,7 +270,5 @@ export default function Profiles() {
       </div>
     </div>
   );
-                                            }
-
-
+}
 
