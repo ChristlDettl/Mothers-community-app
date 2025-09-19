@@ -14,62 +14,73 @@ export default function NavBar() {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        padding: "15px 30px",
-        backgroundColor: "#4f46e5",
-        color: "#fff",
+        padding: "15px 25px",
+        backgroundColor: "#fef3c7", // warmes Beige
+        color: "#4b3832", // dunkles Braun für Text
         flexWrap: "wrap",
-        gap: "10px",
+        boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+        borderBottom: "2px solid #fcd34d", // goldene Linie unten
       }}
     >
-      <h2 style={{ margin: 0, fontWeight: 700 }}>Mothers Community</h2>
+      {/* Logo / Titel */}
+      <h2
+        style={{
+          margin: 0,
+          fontWeight: 700,
+          fontFamily: "'Quicksand', sans-serif",
+          fontSize: "1.4rem",
+          color: "#9a3412", // warmes Terracotta
+        }}
+      >
+        Mothers Community
+      </h2>
 
+      {/* Navigation rechts */}
       <div
         style={{
           display: "flex",
-          gap: "10px",
+          gap: "12px",
           flexWrap: "wrap",
           justifyContent: "center",
-          width: "100%",
-          maxWidth: "300px", // Buttons begrenzen
         }}
       >
-        {/* Hauptmenü-Button */}
+        {/* Hauptmenü */}
         <Link href="/main">
           <button
             style={{
-              flex: 1,
-              padding: "10px 16px",
-              backgroundColor: "#fff",
-              color: "#4f46e5",
-              border: "none",
-              borderRadius: "8px",
+              padding: "10px 18px",
+              backgroundColor: "#fde68a", // helles warmes Gelb
+              color: "#78350f", // braun-orange Text
+              border: "1px solid #fcd34d",
+              borderRadius: "20px",
               cursor: "pointer",
               fontWeight: 600,
-              transition: "all 0.2s",
+              fontFamily: "'Quicksand', sans-serif",
+              transition: "all 0.2s ease",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0ff")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fff")}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fcd34d")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fde68a")}
           >
             Hauptmenü
           </button>
         </Link>
 
-        {/* Logout-Button */}
+        {/* Logout */}
         <button
           onClick={handleLogout}
           style={{
-            flex: 1,
-            padding: "10px 16px",
-            backgroundColor: "#ef4444",
-            color: "#fff",
-            border: "none",
-            borderRadius: "8px",
+            padding: "10px 18px",
+            backgroundColor: "#fca5a5", // zartes Rosa
+            color: "#7f1d1d", // dunkles Rotbraun
+            border: "1px solid #f87171",
+            borderRadius: "20px",
             cursor: "pointer",
             fontWeight: 600,
-            transition: "all 0.2s",
+            fontFamily: "'Quicksand', sans-serif",
+            transition: "all 0.2s ease",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f87171")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fca5a5")}
         >
           Logout
         </button>
@@ -77,3 +88,5 @@ export default function NavBar() {
     </nav>
   );
 }
+
+
