@@ -40,55 +40,91 @@ export default function Main() {
   if (loading) return <p style={{ textAlign: "center" }}>Lade...</p>;
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#f7f8fa" }}>
+    <div
+      style={{
+        fontFamily: "'Poppins', sans-serif",
+        minHeight: "100vh",
+        backgroundColor: "#f9fafb", // leichtes Grau, sehr clean
+      }}
+    >
       <NavBar />
 
       <div
         style={{
-          maxWidth: "600px",
-          margin: "50px auto",
-          padding: "30px",
-          backgroundColor: "#fff",
-          borderRadius: "12px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+          maxWidth: "650px",
+          margin: "60px auto",
+          padding: "35px",
+          backgroundColor: "#ffffff",
+          borderRadius: "16px",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.06)", // sanfter Schatten
+          textAlign: "center",
         }}
       >
-        <h1 style={{ textAlign: "center", marginBottom: "30px", color: "#333" }}>
+        <h1
+          style={{
+            marginBottom: "20px",
+            color: "#6d28d9", // Pastellviolett
+            fontSize: "1.8rem",
+            fontWeight: 700,
+          }}
+        >
           Hallo {profile?.full_name || user?.email} 👋
         </h1>
 
-        <p style={{ textAlign: "center", marginBottom: "20px" }}>
+        <p
+          style={{
+            marginBottom: "30px",
+            color: "#374151",
+            fontSize: "1rem",
+          }}
+        >
           Willkommen in deiner Community-Hauptseite!
         </p>
 
-        <div style={{ display: "flex", justifyContent: "center", gap: "15px" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "15px",
+            alignItems: "center",
+          }}
+        >
           <button
             onClick={() => router.push("/dashboard?edit=1")}
             style={{
-              padding: "12px 20px",
-              backgroundColor: "#4f46e5",
-              color: "#fff",
+              padding: "12px 22px",
+              backgroundColor: "#ede9fe", // zartes Pastellviolett
+              color: "#4c1d95", // dunkler Violettton
               border: "none",
-              borderRadius: "10px",
+              borderRadius: "12px",
               cursor: "pointer",
+              fontWeight: 600,
+              width: "100%",
+              maxWidth: "280px",
+              transition: "all 0.2s ease",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
           >
             Profil bearbeiten
           </button>
-          {/* Neue: Alle Mütter anzeigen */}
+
           <button
             onClick={() => router.push("/profiles")}
             style={{
-              marginTop: "15px",
-              padding: "12px 20px",
-              backgroundColor: "#4f46e5",
-              color: "#fff",
-              fontWeight: 600,
+              padding: "12px 22px",
+              backgroundColor: "#fecaca", // Pastellrosa
+              color: "#7f1d1d", // dunkler Rotbraun
               border: "none",
-              borderRadius: "10px",
+              borderRadius: "12px",
+              cursor: "pointer",
+              fontWeight: 600,
               width: "100%",
-              maxWidth: "300px",
+              maxWidth: "280px",
+              transition: "all 0.2s ease",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fca5a5")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fecaca")}
           >
             Alle Mütter anzeigen
           </button>
@@ -98,6 +134,3 @@ export default function Main() {
   );
 }
 
-
-
-  
