@@ -46,51 +46,49 @@ export default function Profiles() {
   const [maxDistance, setMaxDistance] = useState(""); // km
 
   useEffect(() => {
-  const fetchProfiles = async () => {
-    try {
-      // 1. Eigene User-Session abrufen
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
+    const fetchProfiles = async () => {
+      try {
+        // 1. Eigene User-Session abrufen
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
-      if (sessionError) throw sessionError;
+        if (sessionError) throw sessionError;
 
-      const userId = session?.user.id;
-      if (!userId) throw new Error("Nicht eingeloggt");
+        const userId = session?.user.id;
+        if (!userId) throw new Error("Nicht eingeloggt");
 
-      // 2. Eigenes Profil abrufen
-      const { data: me, error: meError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
+        // 2. Eigenes Profil abrufen
+        const { data: me, error: meError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
 
-      if (meError) console.error("Fehler beim Laden des eigenen Profils:", meError);
-      else setUserProfile(me);
+        if (meError) console.error("Fehler beim Laden des eigenen Profils:", meError);
+        else setUserProfile(me);
 
-      // 3. Alle Profile abrufen
-      const { data: profilesData, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, birthdate, latitude, longitude, children(*)"); // Kinder + Koordinaten
+        // 3. Alle Profile abrufen (inkl. Wohnort city)
+        const { data: profilesData, error } = await supabase
+          .from("profiles")
+          .select("id, full_name, birthdate, city, latitude, longitude, children(*)");
 
-      if (error) console.error("Fehler beim Laden der Profile:", error);
-      else {
-        setProfiles(profilesData || []);
-        setFilteredProfiles(profilesData || []);
+        if (error) console.error("Fehler beim Laden der Profile:", error);
+        else {
+          setProfiles(profilesData || []);
+          setFilteredProfiles(profilesData || []);
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Fehler beim Laden der Profile:", err);
+        setLoading(false);
       }
+    };
 
-      setLoading(false);
-    } catch (err) {
-      console.error("Fehler beim Laden der Profile:", err);
-      setLoading(false);
-    }
-  };
-
-  fetchProfiles();
-}, []);
-  
-  
+    fetchProfiles();
+  }, []);
 
   // Filterfunktion
   useEffect(() => {
@@ -104,11 +102,7 @@ export default function Profiles() {
     }
 
     // Entfernung
-    if (
-      maxDistance &&
-      userProfile?.latitude &&
-      userProfile?.longitude
-    ) {
+    if (maxDistance && userProfile?.latitude && userProfile?.longitude) {
       results = results.filter((p) => {
         if (!p.latitude || !p.longitude) return false;
         const distance = getDistanceFromLatLonInKm(
@@ -246,6 +240,7 @@ export default function Profiles() {
           >
             <h2>{profile.full_name || "Anonyme Mutter"}</h2>
             <p><strong>Alter:</strong> {calculateAge(profile.birthdate)}</p>
+            <p><strong>Wohnort:</strong> {profile.city || "Keine Angabe"}</p>
             <div>
               <strong>Kinder:</strong>
               {profile.children && profile.children.length > 0 ? (
@@ -265,8 +260,7 @@ export default function Profiles() {
       </div>
     </div>
   );
-}
-
+                                            }
 
 
 
