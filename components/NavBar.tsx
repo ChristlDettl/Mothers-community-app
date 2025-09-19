@@ -15,11 +15,10 @@ export default function NavBar() {
         justifyContent: "space-between",
         alignItems: "center",
         padding: "15px 25px",
-        backgroundColor: "#fef3c7", // warmes Beige
-        color: "#4b3832", // dunkles Braun für Text
+        backgroundColor: "#ffffff", // weiß, clean
+        color: "#374151", // neutral dark gray
         flexWrap: "wrap",
-        boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-        borderBottom: "2px solid #fcd34d", // goldene Linie unten
+        boxShadow: "0 2px 8px rgba(0,0,0,0.05)", // sanfter Schatten
       }}
     >
       {/* Logo / Titel */}
@@ -27,9 +26,9 @@ export default function NavBar() {
         style={{
           margin: 0,
           fontWeight: 700,
-          fontFamily: "'Quicksand', sans-serif",
+          fontFamily: "'Poppins', sans-serif",
           fontSize: "1.4rem",
-          color: "#9a3412", // warmes Terracotta
+          color: "#6d28d9", // Pastellviolett
         }}
       >
         Mothers Community
@@ -49,17 +48,18 @@ export default function NavBar() {
           <button
             style={{
               padding: "10px 18px",
-              backgroundColor: "#fde68a", // helles warmes Gelb
-              color: "#78350f", // braun-orange Text
-              border: "1px solid #fcd34d",
-              borderRadius: "20px",
+              backgroundColor: "#ede9fe", // zartes Pastellviolett
+              color: "#4c1d95", // dunkler Violettton
+              border: "none",
+              borderRadius: "10px",
               cursor: "pointer",
               fontWeight: 600,
-              fontFamily: "'Quicksand', sans-serif",
+              fontFamily: "'Poppins', sans-serif",
               transition: "all 0.2s ease",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fcd34d")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fde68a")}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
           >
             Hauptmenü
           </button>
@@ -70,17 +70,18 @@ export default function NavBar() {
           onClick={handleLogout}
           style={{
             padding: "10px 18px",
-            backgroundColor: "#fca5a5", // zartes Rosa
+            backgroundColor: "#fecaca", // zartes Rosa
             color: "#7f1d1d", // dunkles Rotbraun
-            border: "1px solid #f87171",
-            borderRadius: "20px",
+            border: "none",
+            borderRadius: "10px",
             cursor: "pointer",
             fontWeight: 600,
-            fontFamily: "'Quicksand', sans-serif",
+            fontFamily: "'Poppins', sans-serif",
             transition: "all 0.2s ease",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f87171")}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fca5a5")}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fca5a5")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fecaca")}
         >
           Logout
         </button>
@@ -88,5 +89,4 @@ export default function NavBar() {
     </nav>
   );
 }
-
 
