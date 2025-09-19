@@ -208,7 +208,7 @@ export default function Profiles() {
             onChange={(e) => setSearchGender(e.target.value)}
             style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
           >
-            <option value="">Geschlecht wählen</option>
+            <option value="">Geschlecht des Kindes wählen</option>
             <option value="junge">Junge</option>
             <option value="mädchen">Mädchen</option>
             <option value="keine Angabe">Keine Angabe</option>
