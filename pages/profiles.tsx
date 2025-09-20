@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
-import { User, MapPin, Baby, Search } from "lucide-react";
+import { User, MapPin, Mail } from "lucide-react";
 
 // Alter berechnen
 function calculateAge(birthDate: string) {
@@ -65,7 +65,7 @@ export default function Profiles() {
 
         const { data: profilesData } = await supabase
           .from("profiles")
-          .select("id, full_name, birthdate, city, latitude, longitude, children(*)");
+          .select("id, full_name, email, birthdate, city, latitude, longitude, children(*)");
 
         setProfiles(profilesData || []);
         setFilteredProfiles(profilesData || []);
@@ -224,9 +224,7 @@ export default function Profiles() {
                   {profile.full_name || "Anonyme Mutter"}
                 </h2>
               </div>
-              <p className="text-gray-700 flex items-center gap-2">
-                🎂 Alter: {calculateAge(profile.birthdate)}
-              </p>
+              <p className="text-gray-700">🎂 Alter: {calculateAge(profile.birthdate)}</p>
               <p className="text-gray-700 flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-pink-500" />
                 {profile.city || "Keine Angabe"}
@@ -250,11 +248,23 @@ export default function Profiles() {
                   <p className="text-gray-500">Keine Kinder eingetragen</p>
                 )}
               </div>
+
+              {/* Kontakt Button */}
+              {profile.email && (
+                <button
+                  onClick={() => (window.location.href = `mailto:${profile.email}`)}
+                  className="mt-5 flex items-center justify-center gap-2 w-full bg-purple-500 text-white py-2 px-4 rounded-xl shadow hover:bg-purple-600 transition"
+                >
+                  <Mail className="w-5 h-5" />
+                  Kontakt aufnehmen
+                </button>
+              )}
             </div>
           ))}
         </div>
       </div>
     </div>
   );
-    }
+                               }
+
 
