@@ -2,7 +2,60 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
-import { User, MapPin, Mail, SlidersHorizontal } from "lucide-react";
+
+// Kleine interne SVG-Icons (ersetzen lucide-react)
+function IconUser({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+function IconMapPin({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
+function IconMail({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 8.5v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M21 8.5l-9 6-9-6" />
+      <path d="M3 8.5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2" />
+    </svg>
+  );
+}
 
 // Alter berechnen
 function calculateAge(birthDate: string) {
@@ -45,7 +98,6 @@ export default function Profiles() {
   const [minMotherAge, setMinMotherAge] = useState("");
   const [maxMotherAge, setMaxMotherAge] = useState("");
   const [maxDistance, setMaxDistance] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -142,141 +194,146 @@ export default function Profiles() {
     userProfile,
   ]);
 
-  if (loading) return <p className="text-center">Lade Profile...</p>;
+  if (loading) return <p style={{ textAlign: "center" }}>Lade Profile...</p>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 font-sans">
+    <div style={{ fontFamily: "Arial, sans-serif", background: "#f7f8fa", minHeight: "100vh" }}>
       <NavBar />
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">Alle Mütter</h1>
+      <div style={{ maxWidth: "900px", margin: "40px auto", padding: "20px" }}>
+        <h1 style={{ textAlign: "center", marginBottom: "30px" }}>Alle Mütter</h1>
 
-        {/* Filter Dropdown */}
-        <div className="mb-8">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 mx-auto bg-purple-500 text-white px-5 py-2 rounded-full shadow hover:bg-purple-600 transition"
+        {/* Filterbereich */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "15px", marginBottom: "30px" }}>
+          <input
+            type="text"
+            placeholder="Name suchen"
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <input
+            type="text"
+            placeholder="Wohnort suchen"
+            value={searchCity}
+            onChange={(e) => setSearchCity(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <input
+            type="number"
+            placeholder="Mindestalter Mutter"
+            value={minMotherAge}
+            onChange={(e) => setMinMotherAge(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <input
+            type="number"
+            placeholder="Höchstalter Mutter"
+            value={maxMotherAge}
+            onChange={(e) => setMaxMotherAge(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <select
+            value={searchGender}
+            onChange={(e) => setSearchGender(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
           >
-            <SlidersHorizontal className="w-5 h-5" />
-            {showFilters ? "Filter ausblenden" : "Filter einblenden"}
-          </button>
-
-          {showFilters && (
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <input
-                type="text"
-                placeholder="🔍 Name"
-                value={searchName}
-                onChange={(e) => setSearchName(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-purple-300"
-              />
-              <input
-                type="text"
-                placeholder="📍 Wohnort"
-                value={searchCity}
-                onChange={(e) => setSearchCity(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-purple-300"
-              />
-              <select
-                value={searchGender}
-                onChange={(e) => setSearchGender(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-purple-300"
-              >
-                <option value="">👶 Geschlecht Kind</option>
-                <option value="male">Junge</option>
-                <option value="female">Mädchen</option>
-              </select>
-              <input
-                type="number"
-                placeholder="Mindestalter Mutter"
-                value={minMotherAge}
-                onChange={(e) => setMinMotherAge(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm"
-              />
-              <input
-                type="number"
-                placeholder="Höchstalter Mutter"
-                value={maxMotherAge}
-                onChange={(e) => setMaxMotherAge(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm"
-              />
-              <input
-                type="number"
-                placeholder="Mindestalter Kind"
-                value={minChildAge}
-                onChange={(e) => setMinChildAge(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm"
-              />
-              <input
-                type="number"
-                placeholder="Höchstalter Kind"
-                value={maxChildAge}
-                onChange={(e) => setMaxChildAge(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm"
-              />
-              <input
-                type="number"
-                placeholder="Maximale Entfernung (km)"
-                value={maxDistance}
-                onChange={(e) => setMaxDistance(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm"
-              />
-            </div>
-          )}
+            <option value="">Geschlecht des Kindes wählen</option>
+            <option value="male">Junge</option>
+            <option value="female">Mädchen</option>
+            <option value="none">Keine Angabe</option>
+          </select>
+          <input
+            type="number"
+            placeholder="Mindestalter Kind"
+            value={minChildAge}
+            onChange={(e) => setMinChildAge(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <input
+            type="number"
+            placeholder="Höchstalter Kind"
+            value={maxChildAge}
+            onChange={(e) => setMaxChildAge(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <input
+            type="number"
+            placeholder="Maximale Entfernung (km)"
+            value={maxDistance}
+            onChange={(e) => setMaxDistance(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
         </div>
 
-        {/* Profile Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {filteredProfiles.map((profile) => (
-            <div
-              key={profile.id}
-              className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <User className="text-purple-500" />
-                <h2 className="text-xl font-semibold">
-                  {profile.full_name || "Anonyme Mutter"}
-                </h2>
-              </div>
-              <p className="text-gray-700">🎂 Alter: {calculateAge(profile.birthdate)}</p>
-              <p className="text-gray-700 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-pink-500" />
-                {profile.city || "Keine Angabe"}
-              </p>
-              <div className="mt-3">
-                <strong>Kinder:</strong>
-                {profile.children && profile.children.length > 0 ? (
-                  <ul className="list-disc pl-5 text-gray-600 mt-1">
-                    {profile.children.map((child: any, i: number) => {
-                      let genderShort = "–";
-                      if (child.gender === "male") genderShort = "m";
-                      if (child.gender === "female") genderShort = "w";
-                      return (
-                        <li key={i}>
-                          👶 {child.age} Jahre alt ({genderShort})
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="text-gray-500">Keine Kinder eingetragen</p>
-                )}
-              </div>
+        {/* Profile-Übersicht */}
+        {filteredProfiles.map((profile) => (
+          <div
+            key={profile.id}
+            style={{
+              background: "#fff",
+              borderRadius: "12px",
+              padding: "20px",
+              marginBottom: "20px",
+              boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+              <IconUser className="user-icon" style={{ width: 24, height: 24, color: "#7c3aed" } as any} />
+              <h2 style={{ margin: 0 }}>{profile.full_name || "Anonyme Mutter"}</h2>
+            </div>
 
-              {/* Kontakt Button */}
-              {profile.email && (
-                <button
-                  onClick={() => (window.location.href = `mailto:${profile.email}`)}
-                  className="mt-5 flex items-center justify-center gap-2 w-full bg-purple-500 text-white py-2 px-4 rounded-xl shadow hover:bg-purple-600 transition"
-                >
-                  <Mail className="w-5 h-5" />
-                  Kontakt aufnehmen
-                </button>
+            <p style={{ margin: "6px 0" }}><strong>Alter:</strong> {calculateAge(profile.birthdate)}</p>
+            <p style={{ margin: "6px 0", display: "flex", alignItems: "center", gap: 8 }}>
+              <IconMapPin className="pin-icon" style={{ width: 18, height: 18, color: "#ec4899" } as any} />
+              {profile.city || "Keine Angabe"}
+            </p>
+
+            <div style={{ marginTop: 10 }}>
+              <strong>Kinder:</strong>
+              {profile.children && profile.children.length > 0 ? (
+                <ul style={{ marginTop: 6, paddingLeft: 18 }}>
+                  {profile.children.map((child: any, i: number) => {
+                    let genderShort = "–";
+                    if (child.gender === "male") genderShort = "m";
+                    if (child.gender === "female") genderShort = "w";
+                    return (
+                      <li key={i} style={{ marginBottom: 6 }}>
+                        {child.age} Jahre alt ({genderShort})
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p style={{ color: "#666" }}>Keine Kinder eingetragen</p>
               )}
             </div>
-          ))}
-        </div>
+
+            {profile.email && (
+              <button
+                onClick={() => (window.location.href = `mailto:${profile.email}`)}
+                style={{
+                  marginTop: 12,
+                  backgroundColor: "#7c3aed",
+                  color: "#fff",
+                  padding: "10px 14px",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <IconMail className="mail-icon" style={{ width: 18, height: 18, color: "white" } as any} />
+                Kontakt aufnehmen
+              </button>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
 }
+
+
 
