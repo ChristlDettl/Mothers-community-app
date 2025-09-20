@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
-import { User, MapPin, Mail } from "lucide-react";
+import { User, MapPin, Mail, SlidersHorizontal } from "lucide-react";
 
 // Alter berechnen
 function calculateAge(birthDate: string) {
@@ -45,6 +45,7 @@ export default function Profiles() {
   const [minMotherAge, setMinMotherAge] = useState("");
   const [maxMotherAge, setMaxMotherAge] = useState("");
   const [maxDistance, setMaxDistance] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -147,68 +148,80 @@ export default function Profiles() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 font-sans">
       <NavBar />
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-center text-purple-700 mb-8">Alle Mütter</h1>
+        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">Alle Mütter</h1>
 
-        {/* Filterbereich */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-10">
-          <input
-            type="text"
-            placeholder="🔍 Name"
-            value={searchName}
-            onChange={(e) => setSearchName(e.target.value)}
-            className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-          />
-          <input
-            type="text"
-            placeholder="📍 Wohnort"
-            value={searchCity}
-            onChange={(e) => setSearchCity(e.target.value)}
-            className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-          />
-          <select
-            value={searchGender}
-            onChange={(e) => setSearchGender(e.target.value)}
-            className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+        {/* Filter Dropdown */}
+        <div className="mb-8">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 mx-auto bg-purple-500 text-white px-5 py-2 rounded-full shadow hover:bg-purple-600 transition"
           >
-            <option value="">👶 Geschlecht Kind</option>
-            <option value="male">Junge</option>
-            <option value="female">Mädchen</option>
-          </select>
-          <input
-            type="number"
-            placeholder="Mindestalter Mutter"
-            value={minMotherAge}
-            onChange={(e) => setMinMotherAge(e.target.value)}
-            className="p-3 rounded-xl border border-gray-300 shadow-sm"
-          />
-          <input
-            type="number"
-            placeholder="Höchstalter Mutter"
-            value={maxMotherAge}
-            onChange={(e) => setMaxMotherAge(e.target.value)}
-            className="p-3 rounded-xl border border-gray-300 shadow-sm"
-          />
-          <input
-            type="number"
-            placeholder="Mindestalter Kind"
-            value={minChildAge}
-            onChange={(e) => setMinChildAge(e.target.value)}
-            className="p-3 rounded-xl border border-gray-300 shadow-sm"
-          />
-          <input
-            type="number"
-            placeholder="Höchstalter Kind"
-            value={maxChildAge}
-            onChange={(e) => setMaxChildAge(e.target.value)}
-            className="p-3 rounded-xl border border-gray-300 shadow-sm"
-          />
-          <input
-            type="number"
-            placeholder="Maximale Entfernung (km)"
-            value={maxDistance}
-            onChange={(e) => setMaxDistance(e.target.value)}
-            className="p-3 rounded-xl border border-gray-300 shadow-sm"
-          />
+            <SlidersHorizontal className="w-5 h-5" />
+            {showFilters ? "Filter ausblenden" : "Filter einblenden"}
+          </button>
+
+          {showFilters && (
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <input
+                type="text"
+                placeholder="🔍 Name"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-purple-300"
+              />
+              <input
+                type="text"
+                placeholder="📍 Wohnort"
+                value={searchCity}
+                onChange={(e) => setSearchCity(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-purple-300"
+              />
+              <select
+                value={searchGender}
+                onChange={(e) => setSearchGender(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-purple-300"
+              >
+                <option value="">👶 Geschlecht Kind</option>
+                <option value="male">Junge</option>
+                <option value="female">Mädchen</option>
+              </select>
+              <input
+                type="number"
+                placeholder="Mindestalter Mutter"
+                value={minMotherAge}
+                onChange={(e) => setMinMotherAge(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 shadow-sm"
+              />
+              <input
+                type="number"
+                placeholder="Höchstalter Mutter"
+                value={maxMotherAge}
+                onChange={(e) => setMaxMotherAge(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 shadow-sm"
+              />
+              <input
+                type="number"
+                placeholder="Mindestalter Kind"
+                value={minChildAge}
+                onChange={(e) => setMinChildAge(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 shadow-sm"
+              />
+              <input
+                type="number"
+                placeholder="Höchstalter Kind"
+                value={maxChildAge}
+                onChange={(e) => setMaxChildAge(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 shadow-sm"
+              />
+              <input
+                type="number"
+                placeholder="Maximale Entfernung (km)"
+                value={maxDistance}
+                onChange={(e) => setMaxDistance(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 shadow-sm"
+              />
+            </div>
+          )}
         </div>
 
         {/* Profile Cards */}
@@ -239,7 +252,7 @@ export default function Profiles() {
                       if (child.gender === "female") genderShort = "w";
                       return (
                         <li key={i}>
-                          {child.age} Jahre alt ({genderShort})
+                          👶 {child.age} Jahre alt ({genderShort})
                         </li>
                       );
                     })}
@@ -265,6 +278,5 @@ export default function Profiles() {
       </div>
     </div>
   );
-                               }
-
+}
 
