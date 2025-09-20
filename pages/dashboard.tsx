@@ -155,57 +155,50 @@ export default function Dashboard() {
   return (
     <div
       style={{
-        fontFamily: "Arial, sans-serif",
+        fontFamily: "'Poppins', sans-serif",
         minHeight: "100vh",
-        backgroundColor: "#f7f8fa",
+        backgroundColor: "#f9fafb",
       }}
     >
       <NavBar />
+
       <div
         style={{
-          maxWidth: "700px",
-          margin: "50px auto",
-          padding: "30px",
+          maxWidth: "750px",
+          margin: "60px auto",
+          padding: "35px",
           backgroundColor: "#fff",
-          borderRadius: "12px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+          borderRadius: "16px",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
         }}
       >
         <h1
           style={{
             textAlign: "center",
             marginBottom: "30px",
-            color: "#333",
+            color: "#6d28d9",
+            fontSize: "1.8rem",
+            fontWeight: 700,
           }}
         >
           Willkommen, {profile?.full_name || user?.email}
         </h1>
 
         {!editing ? (
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "15px" }}
-          >
-            <p>
-              <strong>Name:</strong> {profile?.full_name || "—"}
-            </p>
-            <p>
-              <strong>Geburtsdatum:</strong> {profile?.birthdate || "—"}
-            </p>
-            <p>
-              <strong>Alter:</strong> {calculateAge(profile?.birthdate)}
-            </p>
-            <p>
-              <strong>Kinder:</strong>
-            </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+            <p><strong>Name:</strong> {profile?.full_name || "—"}</p>
+            <p><strong>Geburtsdatum:</strong> {profile?.birthdate || "—"}</p>
+            <p><strong>Alter:</strong> {calculateAge(profile?.birthdate)}</p>
+            <p><strong>Kinder:</strong></p>
             <ul>
               {children.length > 0 ? (
                 children.map((child, i) => (
                   <li key={child.id || i}>
                     Kind {i + 1}: {child.age} Jahre{" "}
-                    {child.gender && child.gender !== "none"
-                      ? child.gender === "male"
-                        ? "(Junge)"
-                        : "(Mädchen)"
+                    {child.gender === "male"
+                      ? "(Junge)"
+                      : child.gender === "female"
+                      ? "(Mädchen)"
                       : ""}
                   </li>
                 ))
@@ -213,21 +206,23 @@ export default function Dashboard() {
                 <li>Keine Kinder eingetragen</li>
               )}
             </ul>
-            <p>
-              <strong>Wohnort:</strong> {profile?.city || "—"}
-            </p>
+            <p><strong>Wohnort:</strong> {profile?.city || "—"}</p>
 
             <button
               onClick={() => setEditing(true)}
               style={{
                 marginTop: "20px",
                 padding: "12px 20px",
-                backgroundColor: "#4f46e5",
-                color: "#fff",
+                backgroundColor: "#ede9fe",
+                color: "#4c1d95",
                 fontWeight: 600,
                 border: "none",
-                borderRadius: "10px",
+                borderRadius: "12px",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
             >
               Profil bearbeiten
             </button>
@@ -251,9 +246,8 @@ export default function Dashboard() {
               }
               style={{
                 padding: "10px",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-                fontSize: "16px",
+                borderRadius: "10px",
+                border: "1px solid #d1d5db",
               }}
             />
 
@@ -266,9 +260,8 @@ export default function Dashboard() {
               }
               style={{
                 padding: "10px",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-                fontSize: "16px",
+                borderRadius: "10px",
+                border: "1px solid #d1d5db",
               }}
             />
 
@@ -281,40 +274,18 @@ export default function Dashboard() {
               }
               style={{
                 padding: "10px",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-                fontSize: "16px",
+                borderRadius: "10px",
+                border: "1px solid #d1d5db",
               }}
             />
 
             {/* Kinder */}
             <label style={{ fontWeight: 600 }}>Kinder:</label>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-              }}
-            >
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {children.map((child, i) => (
-                <div
-                  key={child.id || i}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "5px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "10px",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
+                <div key={child.id || i} style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                     <span>Kind {i + 1}:</span>
-
                     <input
                       type="number"
                       placeholder="z. B. 5"
@@ -329,9 +300,8 @@ export default function Dashboard() {
                       }}
                       style={{
                         padding: "8px",
-                        borderRadius: "8px",
-                        border: "1px solid #ccc",
-                        fontSize: "14px",
+                        borderRadius: "10px",
+                        border: "1px solid #d1d5db",
                         width: "80px",
                       }}
                     />
@@ -340,17 +310,13 @@ export default function Dashboard() {
                       value={child.gender || "none"}
                       onChange={(e) => {
                         const newChildren = [...children];
-                        newChildren[i] = {
-                          ...newChildren[i],
-                          gender: e.target.value,
-                        };
+                        newChildren[i] = { ...newChildren[i], gender: e.target.value };
                         setChildren(newChildren);
                       }}
                       style={{
                         padding: "8px",
-                        borderRadius: "8px",
-                        border: "1px solid #ccc",
-                        fontSize: "14px",
+                        borderRadius: "10px",
+                        border: "1px solid #d1d5db",
                       }}
                     >
                       <option value="none">Keine Angabe</option>
@@ -365,54 +331,52 @@ export default function Dashboard() {
                       }
                       style={{
                         padding: "6px 10px",
-                        backgroundColor: "#f87171",
+                        backgroundColor: "#fca5a5",
                         color: "#fff",
                         border: "none",
-                        borderRadius: "6px",
+                        borderRadius: "8px",
+                        cursor: "pointer",
                       }}
                     >
                       ❌
                     </button>
                   </div>
-                  <small style={{ color: "#666", marginLeft: "65px" }}>
-                    Bitte trage hier das Alter deines Kindes in Jahren ein und
-                    wähle das Geschlecht.
+                  <small style={{ color: "#6b7280", marginLeft: "65px" }}>
+                    Alter und Geschlecht deines Kindes
                   </small>
                 </div>
               ))}
               <button
                 type="button"
                 onClick={() =>
-                  setChildren([
-                    ...children,
-                    { profile_id: user.id, age: 0, gender: "none" },
-                  ])
+                  setChildren([...children, { profile_id: user.id, age: 0, gender: "none" }])
                 }
                 style={{
                   padding: "8px 12px",
-                  borderRadius: "8px",
-                  backgroundColor: "#eee",
-                  border: "1px solid #ccc",
+                  borderRadius: "10px",
+                  backgroundColor: "#e0f2fe",
+                  border: "1px solid #bae6fd",
                   fontSize: "14px",
-                  marginTop: "5px",
-                  alignSelf: "flex-start",
+                  cursor: "pointer",
+                  width: "fit-content",
                 }}
               >
                 ➕ Kind hinzufügen
               </button>
             </div>
 
+            {/* Buttons */}
             <div></div>
             <div style={{ display: "flex", gap: "10px" }}>
               <button
                 onClick={handleSave}
                 style={{
                   padding: "12px 20px",
-                  backgroundColor: "#4f46e5",
+                  backgroundColor: "#6d28d9",
                   color: "#fff",
                   fontWeight: 600,
                   border: "none",
-                  borderRadius: "10px",
+                  borderRadius: "12px",
                   flex: 1,
                 }}
               >
@@ -422,23 +386,24 @@ export default function Dashboard() {
                 onClick={() => setEditing(false)}
                 style={{
                   padding: "12px 20px",
-                  backgroundColor: "#ccc",
-                  color: "#333",
+                  backgroundColor: "#e5e7eb",
+                  color: "#374151",
                   border: "none",
-                  borderRadius: "10px",
+                  borderRadius: "12px",
                   flex: 1,
+                  cursor: "pointer",
                 }}
               >
                 Abbrechen
               </button>
             </div>
 
-            {/* ⚠️ Account löschen Bereich */}
+            {/* Account löschen */}
             <div
               style={{
                 gridColumn: "1 / span 2",
                 marginTop: "30px",
-                borderTop: "1px solid #eee",
+                borderTop: "1px solid #e5e7eb",
                 paddingTop: "20px",
               }}
             >
@@ -447,8 +412,7 @@ export default function Dashboard() {
               </h3>
               <p style={{ color: "#555", marginBottom: "15px" }}>
                 Wenn du dein Profil und deinen Account löschst, werden alle
-                deine Daten unwiderruflich entfernt. Dieser Vorgang kann nicht
-                rückgängig gemacht werden.
+                deine Daten unwiderruflich entfernt.
               </p>
               <button
                 onClick={async () => {
@@ -492,7 +456,7 @@ export default function Dashboard() {
                   color: "#fff",
                   padding: "12px 20px",
                   border: "none",
-                  borderRadius: "10px",
+                  borderRadius: "12px",
                   fontWeight: 600,
                   cursor: "pointer",
                 }}
@@ -505,5 +469,5 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
+                    }
 
