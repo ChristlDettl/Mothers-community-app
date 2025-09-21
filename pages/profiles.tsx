@@ -5,7 +5,7 @@ import NavBar from "../components/NavBar";
 
 // Alter berechnen
 function calculateAge(birthDate: string) {
-  if (!birthDate) return 0;
+  if (!birthDate) return null;
   const birth = new Date(birthDate);
   const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
@@ -19,10 +19,10 @@ export default function Profiles() {
   const [filteredProfiles, setFilteredProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Such- und Filterstates
+  // Filterstates
   const [searchName, setSearchName] = useState("");
   const [searchCity, setSearchCity] = useState("");
-  const [searchGender, setSearchGender] = useState(""); // junge | mädchen | keine Angabe
+  const [searchGender, setSearchGender] = useState("");
   const [minAge, setMinAge] = useState("");
   const [maxAge, setMaxAge] = useState("");
 
@@ -30,7 +30,7 @@ export default function Profiles() {
     const fetchProfiles = async () => {
       const { data: profilesData, error } = await supabase
         .from("profiles")
-        .select("id, full_name, birthdate, city, children(*)"); // Lade Kinder
+        .select("id, full_name, birthdate, city, children(*)");
 
       if (error) {
         console.error("Fehler beim Laden der Profile:", error);
@@ -44,7 +44,7 @@ export default function Profiles() {
     fetchProfiles();
   }, []);
 
-  // Filterfunktion
+  // Filter
   useEffect(() => {
     let results = [...profiles];
 
@@ -89,7 +89,7 @@ export default function Profiles() {
       <div style={{ maxWidth: "900px", margin: "40px auto", padding: "20px" }}>
         <h1 style={{ textAlign: "center", marginBottom: "30px" }}>Alle Mütter</h1>
 
-        {/* Filterbereich */}
+        {/* Filter */}
         <div
           style={{
             display: "grid",
@@ -138,38 +138,46 @@ export default function Profiles() {
           />
         </div>
 
-        {/* Profile-Übersicht */}
-        {filteredProfiles.map((profile) => (
-          <div
-            key={profile.id}
-            style={{
-              background: "#fff",
-              borderRadius: "12px",
-              padding: "20px",
-              marginBottom: "20px",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-            }}
-          >
-            <h2>{profile.full_name || "Anonyme Mutter"}</h2>
-            <p><strong>Wohnort:</strong> {profile.city || "—"}</p>
-            <p><strong>Geburtsdatum:</strong> {profile.birthdate || "—"}</p>
-            <div>
-              <strong>Kinder:</strong>
-              {profile.children && profile.children.length > 0 ? (
-                <ul>
-                  {profile.children.map((child: any, i: number) => (
-                    <li key={i}>
-                      {child.age} Jahre alt ({child.gender || "keine Angabe"})
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>Keine Kinder eingetragen</p>
-              )}
+        {/* Profile-Liste */}
+        {filteredProfiles.map((profile) => {
+          const age = calculateAge(profile.birthdate);
+
+          return (
+            <div
+              key={profile.id}
+              style={{
+                background: "#fff",
+                borderRadius: "12px",
+                padding: "20px",
+                marginBottom: "20px",
+                boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+              }}
+            >
+              <h2>{profile.full_name || "Anonyme Mutter"}</h2>
+              <p><strong>Alter:</strong> {age !== null ? `${age} Jahre` : "—"}</p>
+              <p><strong>Wohnort:</strong> {profile.city || "—"}</p>
+
+              <div>
+                <strong>Kinder:</strong>
+                {profile.children && profile.children.length > 0 ? (
+                  <ul>
+                    {profile.children.map((child: any, i: number) => (
+                      <li key={i}>
+                        {child.age} Jahre alt ({child.gender || "keine Angabe"})
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>Keine Kinder eingetragen</p>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
+
+
+
