@@ -62,7 +62,7 @@ export default function Messages() {
       setLoading(true);
       try {
         const { data: msgs } = await supabase
-          .from<Message>("messages")
+          .from<Message, Message>("messages") // Zwei Typen für Supabase v2+
           .select("*")
           .or(
             `and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id})`
@@ -85,7 +85,7 @@ export default function Messages() {
 
     try {
       const { data, error } = await supabase
-        .from<Message>("messages")
+        .from<Message, Message>("messages")
         .insert([
           {
             sender_id: userProfile.id,
@@ -180,5 +180,4 @@ export default function Messages() {
     </div>
   );
 }
-
 
