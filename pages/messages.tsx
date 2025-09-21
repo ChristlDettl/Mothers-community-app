@@ -190,7 +190,7 @@ export default function Messages() {
 
     try {
       const { error } = await supabase
-        .from<MessageInsert>("messages")
+        .from<MessageRow, MessageInsert>("messages")
         .insert([
           {
             sender_id: userProfile.id,
