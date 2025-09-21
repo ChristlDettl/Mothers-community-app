@@ -4,13 +4,21 @@ import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
 import { useRouter } from "next/router";
 
+type Message = {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
+};
+
 export default function Messages() {
   const router = useRouter();
   const { receiver_id } = router.query;
 
   const [userProfile, setUserProfile] = useState<any>(null);
   const [receiverProfile, setReceiverProfile] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
 
@@ -54,7 +62,7 @@ export default function Messages() {
       setLoading(true);
       try {
         const { data: msgs } = await supabase
-          .from("messages")
+          .from<Message>("messages")
           .select("*")
           .or(
             `and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id})`
@@ -76,13 +84,15 @@ export default function Messages() {
     if (!newMessage.trim() || !userProfile || !receiver_id) return;
 
     try {
-      const { data, error } = await supabase.from("messages").insert([
-        {
-          sender_id: userProfile.id,
-          receiver_id,
-          content: newMessage.trim(),
-        },
-      ]);
+      const { data, error } = await supabase
+        .from<Message>("messages")
+        .insert([
+          {
+            sender_id: userProfile.id,
+            receiver_id,
+            content: newMessage.trim(),
+          },
+        ]);
 
       if (error) {
         console.error("Fehler beim Senden der Nachricht:", error);
@@ -109,7 +119,15 @@ export default function Messages() {
         </h1>
 
         {/* Nachrichtenbereich */}
-        <div style={{ marginBottom: "20px", maxHeight: "60vh", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+        <div
+          style={{
+            marginBottom: "20px",
+            maxHeight: "60vh",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           {messages.length === 0 && <p style={{ textAlign: "center" }}>Keine Nachrichten.</p>}
           {messages.map((msg) => (
             <div
@@ -162,4 +180,5 @@ export default function Messages() {
     </div>
   );
 }
+
 
