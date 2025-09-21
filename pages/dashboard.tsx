@@ -388,7 +388,7 @@ export default function Dashboard() {
               Speichern
               </button>
               <button
-                onClick={() => setEditing(false)}
+                onClick={() => router.push("/main")}
                 style={{
                   padding: "10px 18px",
                   backgroundColor: "#fecaca", // zartes Rosa
