@@ -354,7 +354,7 @@ export default function Dashboard() {
                 style={{
                   padding: "8px 12px",
                   borderRadius: "10px",
-                  backgroundColor: "#e0f2fe",
+                  backgroundColor: "#e5e7eb",
                   border: "1px solid #bae6fd",
                   fontSize: "14px",
                   cursor: "pointer",
