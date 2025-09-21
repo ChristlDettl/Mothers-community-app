@@ -236,11 +236,16 @@ export default function Profiles() {
                 <strong>Kinder:</strong>
                 {profile.children && profile.children.length > 0 ? (
                   <ul>
-                    {profile.children.map((child: any, i: number) => (
-                      <li key={i}>
-                        {child.age} Jahre alt ({child.gender || "keine Angabe"})
-                      </li>
-                    ))}
+                    {profile.children.map((child: any, i: number) => {
+                      let genderShort = "–";
+                      if (child.gender === "male") genderShort = "m";
+                      if (child.gender === "female") genderShort = "w";
+                      return (
+                        <li key={i}>
+                          {child.age} Jahre alt ({genderShort})
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <p>Keine Kinder eingetragen</p>
@@ -252,6 +257,4 @@ export default function Profiles() {
       </div>
     </div>
   );
-            }
-
-
+      }
