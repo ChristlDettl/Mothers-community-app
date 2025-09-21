@@ -16,7 +16,7 @@ function calculateAge(birthDate: string) {
 
 // Entfernung berechnen (Haversine)
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // Erdradius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -41,6 +41,8 @@ export default function Profiles() {
   const [minChildAge, setMinChildAge] = useState("");
   const [maxChildAge, setMaxChildAge] = useState("");
   const [maxDistance, setMaxDistance] = useState("");
+  const [searchCity, setSearchCity] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -105,6 +107,12 @@ export default function Profiles() {
       );
     }
 
+    if (searchCity) {
+      results = results.filter((p) =>
+        p.city?.toLowerCase().includes(searchCity.toLowerCase())
+      );
+    }
+
     if (maxDistance && userProfile?.latitude && userProfile?.longitude) {
       results = results.filter((p) => {
         if (!p.latitude || !p.longitude) return false;
@@ -119,7 +127,7 @@ export default function Profiles() {
     }
 
     setFilteredProfiles(results);
-  }, [minMotherAge, maxMotherAge, minChildAge, maxChildAge, maxDistance, profiles, userProfile]);
+  }, [minMotherAge, maxMotherAge, minChildAge, maxChildAge, maxDistance, searchCity, profiles, userProfile]);
 
   if (loading) return <p style={{ textAlign: "center" }}>Lade Profile...</p>;
 
@@ -129,51 +137,81 @@ export default function Profiles() {
       <div style={{ maxWidth: "900px", margin: "40px auto", padding: "20px" }}>
         <h1 style={{ textAlign: "center", marginBottom: "30px" }}>Alle Mütter</h1>
 
-        {/* Filter */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "15px",
-            marginBottom: "30px",
-          }}
-        >
-          <input
-            type="number"
-            placeholder="Mindestalter Mutter"
-            value={minMotherAge}
-            onChange={(e) => setMinMotherAge(e.target.value)}
-            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
-          />
-          <input
-            type="number"
-            placeholder="Höchstalter Mutter"
-            value={maxMotherAge}
-            onChange={(e) => setMaxMotherAge(e.target.value)}
-            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
-          />
-          <input
-            type="number"
-            placeholder="Mindestalter Kind"
-            value={minChildAge}
-            onChange={(e) => setMinChildAge(e.target.value)}
-            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
-          />
-          <input
-            type="number"
-            placeholder="Höchstalter Kind"
-            value={maxChildAge}
-            onChange={(e) => setMaxChildAge(e.target.value)}
-            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
-          />
-          <input
-            type="number"
-            placeholder="Maximale Entfernung (km)"
-            value={maxDistance}
-            onChange={(e) => setMaxDistance(e.target.value)}
-            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
-          />
+        {/* Button zum Aufklappen */}
+        <div style={{ textAlign: "center", marginBottom: "20px" }}>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            style={{
+              padding: "12px 20px",
+              backgroundColor: "#4f46e5",
+              color: "#fff",
+              border: "none",
+              borderRadius: "10px",
+              cursor: "pointer",
+            }}
+          >
+            {showFilters ? "Filter ausblenden" : "Filter anzeigen"}
+          </button>
         </div>
+
+        {/* Filterbereich */}
+        {showFilters && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "15px",
+              marginBottom: "30px",
+              background: "#fff",
+              padding: "20px",
+              borderRadius: "12px",
+              boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+            }}
+          >
+            <input
+              type="number"
+              placeholder="Mindestalter Mutter"
+              value={minMotherAge}
+              onChange={(e) => setMinMotherAge(e.target.value)}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+            />
+            <input
+              type="number"
+              placeholder="Höchstalter Mutter"
+              value={maxMotherAge}
+              onChange={(e) => setMaxMotherAge(e.target.value)}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+            />
+            <input
+              type="number"
+              placeholder="Mindestalter Kind"
+              value={minChildAge}
+              onChange={(e) => setMinChildAge(e.target.value)}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+            />
+            <input
+              type="number"
+              placeholder="Höchstalter Kind"
+              value={maxChildAge}
+              onChange={(e) => setMaxChildAge(e.target.value)}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+            />
+            <input
+              type="text"
+              placeholder="Wohnort"
+              value={searchCity}
+              onChange={(e) => setSearchCity(e.target.value)}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+            />
+            <input
+              type="number"
+              placeholder="Maximale Entfernung (km)"
+              value={maxDistance}
+              onChange={(e) => setMaxDistance(e.target.value)}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+            />
+          </div>
+        )}
 
         {/* Profile-Liste */}
         {filteredProfiles.map((profile) => {
@@ -214,7 +252,6 @@ export default function Profiles() {
       </div>
     </div>
   );
-              }
+            }
 
 
-                
