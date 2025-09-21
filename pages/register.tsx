@@ -63,7 +63,19 @@ export default function Register() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <button type="submit">Registrieren</button>
+            <button style={{
+              padding: "10px 18px",
+              backgroundColor: "#ede9fe", // zartes Pastellviolett
+              color: "#4c1d95", // dunkler Violettton
+              border: "none",
+              borderRadius: "10px",
+              cursor: "pointer",
+              fontWeight: 600,
+              fontFamily: "'Poppins', sans-serif",
+              transition: "all 0.2s ease",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+            }}
+              type="submit">Registrieren</button>
             {error && (
               <pre
                 style={{
