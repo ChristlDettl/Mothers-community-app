@@ -12,6 +12,7 @@ type MessageRow = {
   receiver_id: string;
   content: string;
   created_at: string;
+  read_at: string | null;
 };
 
 type MessageInsert = {
@@ -95,7 +96,7 @@ export default function Messages() {
     fetchMessages();
   }, [userProfile, receiver_id]);
 
-  // Realtime-Subscription für neue Nachrichten
+  // Realtime-Subscription (neue Nachrichten + Updates wie read_at)
   useEffect(() => {
     if (!userProfile || !receiver_id) return;
 
@@ -104,14 +105,20 @@ export default function Messages() {
       .on<MessageRow>(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*", // INSERT + UPDATE
           schema: "public",
           table: "messages",
           filter: `or(and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id}))`,
         },
         (payload: RealtimePostgresInsertPayload<MessageRow>) => {
           const newMsg = payload.new;
-          setMessages((prev) => [...prev, newMsg]);
+          setMessages((prev) => {
+            const exists = prev.find((m) => m.id === newMsg.id);
+            if (exists) {
+              return prev.map((m) => (m.id === newMsg.id ? newMsg : m));
+            }
+            return [...prev, newMsg];
+          });
           scrollToBottom();
         }
       )
@@ -121,6 +128,28 @@ export default function Messages() {
       supabase.removeChannel(channel);
     };
   }, [userProfile, receiver_id]);
+
+  // Ungelesene Nachrichten als "gelesen" markieren
+  useEffect(() => {
+    if (!userProfile || !receiver_id || messages.length === 0) return;
+
+    const unread = messages.filter(
+      (m) => m.receiver_id === userProfile.id && !m.read_at
+    );
+
+    if (unread.length > 0) {
+      const ids = unread.map((m) => m.id);
+      supabase
+        .from("messages")
+        .update({ read_at: new Date().toISOString() })
+        .in("id", ids)
+        .then(({ error }) => {
+          if (error) {
+            console.error("Fehler beim Aktualisieren der Lesebestätigung:", error);
+          }
+        });
+    }
+  }, [messages, userProfile, receiver_id]);
 
   // Nachricht senden
   const sendMessage = async () => {
@@ -184,6 +213,17 @@ export default function Messages() {
               <p style={{ margin: 0 }}>{msg.content}</p>
               <small style={{ color: "#666" }}>
                 {new Date(msg.created_at).toLocaleString()}
+                {msg.sender_id === userProfile?.id && (
+                  <span
+                    style={{
+                      marginLeft: 8,
+                      color: msg.read_at ? "green" : "#aaa",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {msg.read_at ? "✓ Gelesen" : "✓ Gesendet"}
+                  </span>
+                )}
               </small>
             </div>
           ))}
@@ -220,5 +260,7 @@ export default function Messages() {
       </div>
     </div>
   );
-}
+            }
+
+
 
