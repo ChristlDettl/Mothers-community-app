@@ -390,17 +390,20 @@ export default function Dashboard() {
               <button
                 onClick={() => setEditing(false)}
                 style={{
-                  padding: "12px 20px",
-                  backgroundColor: "#e5e7eb",
-                  color: "#374151",
+                  padding: "10px 18px",
+                  backgroundColor: "#fecaca", // zartes Rosa
+                  color: "#7f1d1d", // dunkles Rotbraun
                   border: "none",
-                  borderRadius: "12px",
-                  flex: 1,
+                  borderRadius: "10px",
                   cursor: "pointer",
-                }}
-              >
-                Abbrechen
-              </button>
+                  fontWeight: 600,
+                  fontFamily: "'Poppins', sans-serif",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                 }}
+                    >
+                      Abbrechen
+                </button>
             </div>
 
             {/* Account löschen */}
