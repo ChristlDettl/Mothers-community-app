@@ -4,12 +4,19 @@ import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
 import { useRouter } from "next/router";
 
-type Message = {
+// Typen für Supabase v2
+type MessageRow = {
   id: string;
   sender_id: string;
   receiver_id: string;
   content: string;
   created_at: string;
+};
+
+type MessageInsert = {
+  sender_id: string;
+  receiver_id: string;
+  content: string;
 };
 
 export default function Messages() {
@@ -18,7 +25,7 @@ export default function Messages() {
 
   const [userProfile, setUserProfile] = useState<any>(null);
   const [receiverProfile, setReceiverProfile] = useState<any>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<MessageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
 
@@ -62,12 +69,13 @@ export default function Messages() {
       setLoading(true);
       try {
         const { data: msgs } = await supabase
-          .from<Message>("messages") // nur 1 Typ
+          .from<MessageRow, MessageInsert>("messages") // zwei Typen
           .select("*")
           .or(
             `and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id})`
           )
           .order("created_at", { ascending: true });
+
         setMessages(msgs || []);
       } catch (err) {
         console.error("Fehler beim Laden der Nachrichten:", err);
@@ -85,7 +93,7 @@ export default function Messages() {
 
     try {
       const { data, error } = await supabase
-        .from<Message>("messages") // nur 1 Typ
+        .from<MessageRow, MessageInsert>("messages") // zwei Typen
         .insert([
           {
             sender_id: userProfile.id,
