@@ -191,7 +191,7 @@ const sendMessage = async () => {
 
   try {
     const { data, error } = await supabase
-      .from<MessageRow, MessageInsert>("messages")
+      .from("messages")
       .insert([
         {
           sender_id: userProfile.id,
