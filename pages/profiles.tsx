@@ -2,7 +2,32 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
-import { User, MapPin, Mail, SlidersHorizontal } from "lucide-react";
+
+// Kleine interne SVG-Icons
+function IconUser(props: any) {
+  return (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+function IconMapPin(props: any) {
+  return (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
+function IconMail(props: any) {
+  return (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M22 6 12 13 2 6" />
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+    </svg>
+  );
+}
 
 // Alter berechnen
 function calculateAge(birthDate: string) {
@@ -17,7 +42,7 @@ function calculateAge(birthDate: string) {
 
 // Entfernung berechnen
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371;
+  const R = 6371; // Erdradius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -44,8 +69,7 @@ export default function Profiles() {
   const [maxChildAge, setMaxChildAge] = useState("");
   const [minMotherAge, setMinMotherAge] = useState("");
   const [maxMotherAge, setMaxMotherAge] = useState("");
-  const [maxDistance, setMaxDistance] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [sortOption, setSortOption] = useState("");
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -53,16 +77,16 @@ export default function Profiles() {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-
         const userId = session?.user?.id;
-        if (!userId) return;
 
-        const { data: me } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", userId)
-          .single();
-        setUserProfile(me);
+        if (userId) {
+          const { data: me } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", userId)
+            .single();
+          setUserProfile(me);
+        }
 
         const { data: profilesData } = await supabase
           .from("profiles")
@@ -71,16 +95,15 @@ export default function Profiles() {
         setProfiles(profilesData || []);
         setFilteredProfiles(profilesData || []);
       } catch (err) {
-        console.error("Fehler beim Laden der Profile:", err);
+        console.error("Fehler beim Laden:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProfiles();
   }, []);
 
-  // Filter anwenden
+  // Filter + Sortierung
   useEffect(() => {
     let results = [...profiles];
 
@@ -93,18 +116,6 @@ export default function Profiles() {
       results = results.filter((p) =>
         p.city?.toLowerCase().includes(searchCity.toLowerCase())
       );
-    }
-    if (maxDistance && userProfile?.latitude && userProfile?.longitude) {
-      results = results.filter((p) => {
-        if (!p.latitude || !p.longitude) return false;
-        const distance = getDistanceFromLatLonInKm(
-          userProfile.latitude,
-          userProfile.longitude,
-          p.latitude,
-          p.longitude
-        );
-        return distance <= parseFloat(maxDistance);
-      });
     }
     if (searchGender) {
       results = results.filter((p) =>
@@ -128,6 +139,27 @@ export default function Profiles() {
       results = results.filter((p) => calculateAge(p.birthdate) <= parseInt(maxMotherAge));
     }
 
+    // Sortierung nach Entfernung
+    if (sortOption === "distance" && userProfile?.latitude && userProfile?.longitude) {
+      results.sort((a, b) => {
+        if (!a.latitude || !a.longitude) return 1;
+        if (!b.latitude || !b.longitude) return -1;
+        const distA = getDistanceFromLatLonInKm(
+          userProfile.latitude,
+          userProfile.longitude,
+          a.latitude,
+          a.longitude
+        );
+        const distB = getDistanceFromLatLonInKm(
+          userProfile.latitude,
+          userProfile.longitude,
+          b.latitude,
+          b.longitude
+        );
+        return distA - distB;
+      });
+    }
+
     setFilteredProfiles(results);
   }, [
     searchName,
@@ -137,91 +169,85 @@ export default function Profiles() {
     maxChildAge,
     minMotherAge,
     maxMotherAge,
-    maxDistance,
+    sortOption,
     profiles,
     userProfile,
   ]);
 
-  if (loading) return <p className="text-center">Lade Profile...</p>;
+  if (loading) return <p className="text-center mt-8">Lade Profile...</p>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 font-sans">
       <NavBar />
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">Alle Mütter</h1>
 
-        {/* Filter Dropdown */}
-        <div className="mb-8">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 mx-auto bg-purple-500 text-white px-5 py-2 rounded-full shadow hover:bg-purple-600 transition"
-          >
-            <SlidersHorizontal className="w-5 h-5" />
-            {showFilters ? "Filter ausblenden" : "Filter einblenden"}
-          </button>
+      <div className="max-w-5xl mx-auto px-4 py-10">
+        <h1 className="text-3xl font-bold text-center text-purple-700 mb-8">Alle Mütter</h1>
 
-          {showFilters && (
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <input
-                type="text"
-                placeholder="🔍 Name"
-                value={searchName}
-                onChange={(e) => setSearchName(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-purple-300"
-              />
-              <input
-                type="text"
-                placeholder="📍 Wohnort"
-                value={searchCity}
-                onChange={(e) => setSearchCity(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-purple-300"
-              />
-              <select
-                value={searchGender}
-                onChange={(e) => setSearchGender(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-purple-300"
-              >
-                <option value="">👶 Geschlecht Kind</option>
-                <option value="male">Junge</option>
-                <option value="female">Mädchen</option>
-              </select>
-              <input
-                type="number"
-                placeholder="Mindestalter Mutter"
-                value={minMotherAge}
-                onChange={(e) => setMinMotherAge(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm"
-              />
-              <input
-                type="number"
-                placeholder="Höchstalter Mutter"
-                value={maxMotherAge}
-                onChange={(e) => setMaxMotherAge(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm"
-              />
-              <input
-                type="number"
-                placeholder="Mindestalter Kind"
-                value={minChildAge}
-                onChange={(e) => setMinChildAge(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm"
-              />
-              <input
-                type="number"
-                placeholder="Höchstalter Kind"
-                value={maxChildAge}
-                onChange={(e) => setMaxChildAge(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm"
-              />
-              <input
-                type="number"
-                placeholder="Maximale Entfernung (km)"
-                value={maxDistance}
-                onChange={(e) => setMaxDistance(e.target.value)}
-                className="p-3 rounded-xl border border-gray-300 shadow-sm"
-              />
-            </div>
-          )}
+        {/* Filterbereich */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-10">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Filter</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <input
+              type="text"
+              placeholder="🔍 Name"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+            />
+            <input
+              type="text"
+              placeholder="📍 Wohnort"
+              value={searchCity}
+              onChange={(e) => setSearchCity(e.target.value)}
+              className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+            />
+            <select
+              value={searchGender}
+              onChange={(e) => setSearchGender(e.target.value)}
+              className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+            >
+              <option value="">👶 Geschlecht Kind</option>
+              <option value="male">Junge</option>
+              <option value="female">Mädchen</option>
+            </select>
+            <input
+              type="number"
+              placeholder="Mindestalter Mutter"
+              value={minMotherAge}
+              onChange={(e) => setMinMotherAge(e.target.value)}
+              className="p-3 rounded-xl border border-gray-300 shadow-sm"
+            />
+            <input
+              type="number"
+              placeholder="Höchstalter Mutter"
+              value={maxMotherAge}
+              onChange={(e) => setMaxMotherAge(e.target.value)}
+              className="p-3 rounded-xl border border-gray-300 shadow-sm"
+            />
+            <input
+              type="number"
+              placeholder="Mindestalter Kind"
+              value={minChildAge}
+              onChange={(e) => setMinChildAge(e.target.value)}
+              className="p-3 rounded-xl border border-gray-300 shadow-sm"
+            />
+            <input
+              type="number"
+              placeholder="Höchstalter Kind"
+              value={maxChildAge}
+              onChange={(e) => setMaxChildAge(e.target.value)}
+              className="p-3 rounded-xl border border-gray-300 shadow-sm"
+            />
+            {/* Sortierung */}
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+            >
+              <option value="">🔀 Sortieren</option>
+              <option value="distance">📍 Nach Entfernung</option>
+            </select>
+          </div>
         </div>
 
         {/* Profile Cards */}
@@ -229,46 +255,50 @@ export default function Profiles() {
           {filteredProfiles.map((profile) => (
             <div
               key={profile.id}
-              className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition"
+              className="bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-between hover:shadow-xl transition"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <User className="text-purple-500" />
-                <h2 className="text-xl font-semibold">
-                  {profile.full_name || "Anonyme Mutter"}
-                </h2>
-              </div>
-              <p className="text-gray-700">🎂 Alter: {calculateAge(profile.birthdate)}</p>
-              <p className="text-gray-700 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-pink-500" />
-                {profile.city || "Keine Angabe"}
-              </p>
-              <div className="mt-3">
-                <strong>Kinder:</strong>
-                {profile.children && profile.children.length > 0 ? (
-                  <ul className="list-disc pl-5 text-gray-600 mt-1">
-                    {profile.children.map((child: any, i: number) => {
-                      let genderShort = "–";
-                      if (child.gender === "male") genderShort = "m";
-                      if (child.gender === "female") genderShort = "w";
-                      return (
-                        <li key={i}>
-                          👶 {child.age} Jahre alt ({genderShort})
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="text-gray-500">Keine Kinder eingetragen</p>
-                )}
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <IconUser className="w-6 h-6 text-purple-500" />
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    {profile.full_name || "Anonyme Mutter"}
+                  </h2>
+                </div>
+                <p className="text-gray-700 mb-1">🎂 Alter: {calculateAge(profile.birthdate)}</p>
+                <p className="text-gray-700 flex items-center gap-2 mb-3">
+                  <IconMapPin className="w-5 h-5 text-pink-500" />
+                  {profile.city || "Keine Angabe"}
+                </p>
+                <div>
+                  <strong className="text-gray-800">Kinder:</strong>
+                  {profile.children && profile.children.length > 0 ? (
+                    <ul className="list-disc pl-5 text-gray-600 mt-1">
+                      {profile.children.map((child: any, i: number) => {
+                        let genderShort = "–";
+                        if (child.gender === "male") genderShort = "m";
+                        if (child.gender === "female") genderShort = "w";
+                        return (
+                          <li key={i}>
+                            {child.age} Jahre alt ({genderShort})
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 mt-1">Keine Kinder eingetragen</p>
+                  )}
+                </div>
               </div>
 
-              {/* Kontakt Button */}
               {profile.email && (
                 <button
                   onClick={() => (window.location.href = `mailto:${profile.email}`)}
-                  className="mt-5 flex items-center justify-center gap-2 w-full bg-purple-500 text-white py-2 px-4 rounded-xl shadow hover:bg-purple-600 transition"
+                  className="mt-5 flex items-center justify-center gap-2 w-full 
+                             bg-gradient-to-r from-purple-500 to-pink-500 
+                             text-white py-2 px-4 rounded-xl shadow 
+                             hover:opacity-90 transition"
                 >
-                  <Mail className="w-5 h-5" />
+                  <IconMail className="w-5 h-5" />
                   Kontakt aufnehmen
                 </button>
               )}
@@ -278,4 +308,4 @@ export default function Profiles() {
       </div>
     </div>
   );
-                  }
+}
