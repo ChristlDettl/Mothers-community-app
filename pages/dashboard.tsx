@@ -369,18 +369,23 @@ export default function Dashboard() {
             <div></div>
             <div style={{ display: "flex", gap: "10px" }}>
               <button
-                onClick={handleSave}
-                style={{
-                  padding: "12px 20px",
-                  backgroundColor: "#6d28d9",
-                  color: "#fff",
-                  fontWeight: 600,
-                  border: "none",
-                  borderRadius: "12px",
-                  flex: 1,
-                }}
+               onClick={handleSave}
+               style={{
+               padding: "12px 20px",
+               backgroundColor: "#ede9fe", // Pastellviolett
+               color: "#4c1d95", // dunkler Violettton
+               fontWeight: 600,
+               border: "none",
+               borderRadius: "12px",
+               flex: 1,
+               cursor: "pointer",
+               transition: "all 0.2s ease",
+               boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+               }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
               >
-                Speichern
+              Speichern
               </button>
               <button
                 onClick={() => setEditing(false)}
