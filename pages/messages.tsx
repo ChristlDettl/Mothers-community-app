@@ -76,15 +76,23 @@ export default function Messages() {
     if (!newMessage.trim() || !userProfile || !receiver_id) return;
 
     try {
-      const { data } = await supabase.from("messages").insert([
+      const { data, error } = await supabase.from("messages").insert([
         {
           sender_id: userProfile.id,
           receiver_id,
           content: newMessage.trim(),
         },
       ]);
-      setMessages((prev) => [...prev, data[0]]);
-      setNewMessage("");
+
+      if (error) {
+        console.error("Fehler beim Senden der Nachricht:", error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setMessages((prev) => [...prev, data[0]]);
+        setNewMessage("");
+      }
     } catch (err) {
       console.error("Fehler beim Senden der Nachricht:", err);
     }
@@ -101,7 +109,7 @@ export default function Messages() {
         </h1>
 
         {/* Nachrichtenbereich */}
-        <div style={{ marginBottom: "20px", maxHeight: "60vh", overflowY: "auto" }}>
+        <div style={{ marginBottom: "20px", maxHeight: "60vh", overflowY: "auto", display: "flex", flexDirection: "column" }}>
           {messages.length === 0 && <p style={{ textAlign: "center" }}>Keine Nachrichten.</p>}
           {messages.map((msg) => (
             <div
@@ -154,5 +162,4 @@ export default function Messages() {
     </div>
   );
 }
-
 
