@@ -56,13 +56,13 @@ export default function Register() {
               onChange={(e) => setEmail(e.target.value)}
               required
             /></p>
-            <input
+            <p><input
               type="password"
               placeholder="Passwort"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-            />
+            /></p>
             <p>
             <button style={{
               padding: "10px 18px",
