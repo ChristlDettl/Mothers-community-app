@@ -33,6 +33,9 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
 
+  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+  const [presenceChannel, setPresenceChannel] = useState<any>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -105,7 +108,7 @@ export default function Messages() {
       .on<MessageRow>(
         "postgres_changes",
         {
-          event: "*", // INSERT + UPDATE
+          event: "*",
           schema: "public",
           table: "messages",
           filter: `or(and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id}))`,
@@ -128,6 +131,36 @@ export default function Messages() {
       supabase.removeChannel(channel);
     };
   }, [userProfile, receiver_id]);
+
+  // Presence (Online-/Offline + Typing)
+  useEffect(() => {
+    if (!userProfile) return;
+
+    const channel = supabase.channel("chat-presence", {
+      config: { presence: { key: userProfile.id } },
+    });
+
+    channel
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState();
+        setOnlineUsers(Object.values(state).flat());
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel.track({
+            user_id: userProfile.id,
+            full_name: userProfile.full_name,
+            status: "online",
+          });
+        }
+      });
+
+    setPresenceChannel(channel);
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userProfile]);
 
   // Ungelesene Nachrichten als "gelesen" markieren
   useEffect(() => {
@@ -170,11 +203,36 @@ export default function Messages() {
         console.error("Fehler beim Senden der Nachricht:", error);
       }
 
-      setNewMessage(""); // Eingabefeld leeren
+      setNewMessage("");
+      if (presenceChannel) {
+        presenceChannel.track({
+          user_id: userProfile.id,
+          full_name: userProfile.full_name,
+          status: "online",
+        });
+      }
     } catch (err) {
       console.error("Fehler beim Senden der Nachricht:", err);
     }
   };
+
+  // Tipp-Status setzen
+  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+
+    if (presenceChannel) {
+      presenceChannel.track({
+        user_id: userProfile.id,
+        full_name: userProfile.full_name,
+        status: e.target.value ? "typing" : "online",
+      });
+    }
+  };
+
+  const isReceiverOnline = onlineUsers.some((u) => u.user_id === receiver_id);
+  const isTyping = onlineUsers.some(
+    (u) => u.user_id === receiver_id && u.status === "typing"
+  );
 
   if (loading) return <p style={{ textAlign: "center" }}>Lade Nachrichten...</p>;
 
@@ -182,9 +240,19 @@ export default function Messages() {
     <div style={{ fontFamily: "Arial, sans-serif", background: "#f7f8fa", minHeight: "100vh" }}>
       <NavBar />
       <div style={{ maxWidth: "700px", margin: "40px auto", padding: "20px" }}>
-        <h1 style={{ textAlign: "center", marginBottom: "30px" }}>
+        <h1 style={{ textAlign: "center", marginBottom: "10px" }}>
           {receiverProfile ? `Chat mit ${receiverProfile.full_name}` : "Inbox"}
         </h1>
+        {receiverProfile && (
+          <p style={{ textAlign: "center", color: isReceiverOnline ? "green" : "gray" }}>
+            {isReceiverOnline ? "Online" : "Offline"}
+          </p>
+        )}
+        {isTyping && (
+          <p style={{ textAlign: "center", color: "#666", fontStyle: "italic" }}>
+            {receiverProfile?.full_name} tippt gerade...
+          </p>
+        )}
 
         {/* Nachrichtenbereich */}
         <div
@@ -237,7 +305,7 @@ export default function Messages() {
               type="text"
               placeholder="Nachricht schreiben..."
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={handleTyping}
               style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             />
@@ -260,7 +328,5 @@ export default function Messages() {
       </div>
     </div>
   );
-            }
-
-
+          }
 
