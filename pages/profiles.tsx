@@ -232,6 +232,7 @@ export default function Profiles() {
                 padding: "20px",
                 marginBottom: "20px",
                 boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+                position: "relative",
               }}
             >
               <h2>{profile.full_name || "Anonyme Mutter"}</h2>
@@ -260,10 +261,38 @@ export default function Profiles() {
                   <p>Keine Kinder eingetragen</p>
                 )}
               </div>
+
+              {/* Kontakt-Button */}
+              <button
+                onClick={() => alert(`Kontakt aufnehmen mit ${profile.full_name || "dieser Mutter"}`)}
+                style={{
+                  position: "absolute",
+                  top: "20px",
+                  right: "20px",
+                  backgroundColor: "#ede9fe",
+                  color: "#4c1d95",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "40px",
+                  height: "40px",
+                  cursor: "pointer",
+                  fontSize: "18px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
+              >
+                ✉️
+              </button>
             </div>
           );
         })}
       </div>
     </div>
   );
-                }
+                  }
+
