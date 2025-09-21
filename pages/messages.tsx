@@ -1,10 +1,10 @@
 // pages/messages.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
 import { useRouter } from "next/router";
 
-// Typen für Supabase v2
+// Typen für Supabase
 type MessageRow = {
   id: string;
   sender_id: string;
@@ -21,7 +21,9 @@ type MessageInsert = {
 
 export default function Messages() {
   const router = useRouter();
-  const { receiver_id } = router.query;
+  const receiver_id = Array.isArray(router.query.receiver_id)
+    ? router.query.receiver_id[0]
+    : router.query.receiver_id;
 
   const [userProfile, setUserProfile] = useState<any>(null);
   const [receiverProfile, setReceiverProfile] = useState<any>(null);
@@ -29,13 +31,18 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Hilfsfunktion: Scrollt immer nach unten
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   // Eigene Profildaten laden
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         const userId = session?.user?.id;
         if (!userId) return;
 
@@ -69,7 +76,7 @@ export default function Messages() {
       setLoading(true);
       try {
         const { data: msgs } = await supabase
-          .from<MessageRow, MessageInsert>("messages") // zwei Typen
+          .from<MessageRow>("messages")
           .select("*")
           .or(
             `and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id})`
@@ -77,6 +84,7 @@ export default function Messages() {
           .order("created_at", { ascending: true });
 
         setMessages(msgs || []);
+        scrollToBottom();
       } catch (err) {
         console.error("Fehler beim Laden der Nachrichten:", err);
       } finally {
@@ -93,7 +101,7 @@ export default function Messages() {
 
     try {
       const { data, error } = await supabase
-        .from<MessageRow, MessageInsert>("messages") // zwei Typen
+        .from<MessageInsert>("messages")
         .insert([
           {
             sender_id: userProfile.id,
@@ -108,8 +116,9 @@ export default function Messages() {
       }
 
       if (data && data.length > 0) {
-        setMessages((prev) => [...prev, data[0]]);
+        setMessages((prev) => [...prev, { ...data[0], created_at: new Date().toISOString() }]);
         setNewMessage("");
+        scrollToBottom();
       }
     } catch (err) {
       console.error("Fehler beim Senden der Nachricht:", err);
@@ -156,6 +165,7 @@ export default function Messages() {
               </small>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Neue Nachricht */}
@@ -188,4 +198,7 @@ export default function Messages() {
     </div>
   );
 }
+
+
+
 
