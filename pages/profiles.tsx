@@ -14,72 +14,112 @@ function calculateAge(birthDate: string) {
   return age;
 }
 
+// Entfernung berechnen (Haversine)
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Erdradius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function Profiles() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   // Filterstates
-  const [searchName, setSearchName] = useState("");
-  const [searchCity, setSearchCity] = useState("");
-  const [searchGender, setSearchGender] = useState("");
-  const [minAge, setMinAge] = useState("");
-  const [maxAge, setMaxAge] = useState("");
+  const [minMotherAge, setMinMotherAge] = useState("");
+  const [maxMotherAge, setMaxMotherAge] = useState("");
+  const [minChildAge, setMinChildAge] = useState("");
+  const [maxChildAge, setMaxChildAge] = useState("");
+  const [maxDistance, setMaxDistance] = useState("");
 
   useEffect(() => {
     const fetchProfiles = async () => {
-      const { data: profilesData, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, birthdate, city, children(*)");
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-      if (error) {
-        console.error("Fehler beim Laden der Profile:", error);
-      } else {
+        const userId = session?.user?.id;
+        if (!userId) return;
+
+        const { data: me } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
+        setUserProfile(me);
+
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, full_name, birthdate, city, latitude, longitude, children(*)");
+
         setProfiles(profilesData || []);
         setFilteredProfiles(profilesData || []);
+      } catch (err) {
+        console.error("Fehler beim Laden der Profile:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchProfiles();
   }, []);
 
-  // Filter
+  // Filter anwenden
   useEffect(() => {
     let results = [...profiles];
 
-    if (searchName) {
+    if (minMotherAge) {
+      results = results.filter((p) => {
+        const age = calculateAge(p.birthdate);
+        return age !== null && age >= parseInt(minMotherAge);
+      });
+    }
+
+    if (maxMotherAge) {
+      results = results.filter((p) => {
+        const age = calculateAge(p.birthdate);
+        return age !== null && age <= parseInt(maxMotherAge);
+      });
+    }
+
+    if (minChildAge) {
       results = results.filter((p) =>
-        p.full_name?.toLowerCase().includes(searchName.toLowerCase())
+        p.children?.some((c: any) => c.age >= parseInt(minChildAge))
       );
     }
 
-    if (searchCity) {
+    if (maxChildAge) {
       results = results.filter((p) =>
-        p.city?.toLowerCase().includes(searchCity.toLowerCase())
+        p.children?.some((c: any) => c.age <= parseInt(maxChildAge))
       );
     }
 
-    if (searchGender) {
-      results = results.filter((p) =>
-        p.children?.some((c: any) => c.gender === searchGender)
-      );
-    }
-
-    if (minAge) {
-      results = results.filter((p) =>
-        p.children?.some((c: any) => c.age >= parseInt(minAge))
-      );
-    }
-
-    if (maxAge) {
-      results = results.filter((p) =>
-        p.children?.some((c: any) => c.age <= parseInt(maxAge))
-      );
+    if (maxDistance && userProfile?.latitude && userProfile?.longitude) {
+      results = results.filter((p) => {
+        if (!p.latitude || !p.longitude) return false;
+        const distance = getDistanceFromLatLonInKm(
+          userProfile.latitude,
+          userProfile.longitude,
+          p.latitude,
+          p.longitude
+        );
+        return distance <= parseFloat(maxDistance);
+      });
     }
 
     setFilteredProfiles(results);
-  }, [searchName, searchCity, searchGender, minAge, maxAge, profiles]);
+  }, [minMotherAge, maxMotherAge, minChildAge, maxChildAge, maxDistance, profiles, userProfile]);
 
   if (loading) return <p style={{ textAlign: "center" }}>Lade Profile...</p>;
 
@@ -93,47 +133,44 @@ export default function Profiles() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
             gap: "15px",
             marginBottom: "30px",
           }}
         >
           <input
-            type="text"
-            placeholder="Name suchen"
-            value={searchName}
-            onChange={(e) => setSearchName(e.target.value)}
-            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
-          />
-          <input
-            type="text"
-            placeholder="Stadt suchen"
-            value={searchCity}
-            onChange={(e) => setSearchCity(e.target.value)}
-            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
-          />
-          <select
-            value={searchGender}
-            onChange={(e) => setSearchGender(e.target.value)}
-            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
-          >
-            <option value="">Geschlecht wählen</option>
-            <option value="junge">Junge</option>
-            <option value="mädchen">Mädchen</option>
-            <option value="keine Angabe">Keine Angabe</option>
-          </select>
-          <input
             type="number"
-            placeholder="Mindestalter"
-            value={minAge}
-            onChange={(e) => setMinAge(e.target.value)}
+            placeholder="Mindestalter Mutter"
+            value={minMotherAge}
+            onChange={(e) => setMinMotherAge(e.target.value)}
             style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
           />
           <input
             type="number"
-            placeholder="Höchstalter"
-            value={maxAge}
-            onChange={(e) => setMaxAge(e.target.value)}
+            placeholder="Höchstalter Mutter"
+            value={maxMotherAge}
+            onChange={(e) => setMaxMotherAge(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <input
+            type="number"
+            placeholder="Mindestalter Kind"
+            value={minChildAge}
+            onChange={(e) => setMinChildAge(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <input
+            type="number"
+            placeholder="Höchstalter Kind"
+            value={maxChildAge}
+            onChange={(e) => setMaxChildAge(e.target.value)}
+            style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <input
+            type="number"
+            placeholder="Maximale Entfernung (km)"
+            value={maxDistance}
+            onChange={(e) => setMaxDistance(e.target.value)}
             style={{ padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
           />
         </div>
@@ -154,7 +191,7 @@ export default function Profiles() {
               }}
             >
               <h2>{profile.full_name || "Anonyme Mutter"}</h2>
-              <p><strong>Alter:</strong> {age !== null ? `${age} Jahre` : "—"}</p>
+              <p><strong>Alter Mutter:</strong> {age !== null ? `${age} Jahre` : "—"}</p>
               <p><strong>Wohnort:</strong> {profile.city || "—"}</p>
 
               <div>
@@ -177,7 +214,7 @@ export default function Profiles() {
       </div>
     </div>
   );
-}
+              }
 
 
-
+                
