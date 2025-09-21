@@ -80,7 +80,7 @@ export default function Messages() {
       setLoading(true);
       try {
         const { data: msgs } = await supabase
-          .from<MessageRow, MessageRow>("messages")
+          .from("messages")
           .select("*")
           .or(
             `and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id})`
@@ -190,7 +190,7 @@ export default function Messages() {
 
     try {
       const { error } = await supabase
-        .from<MessageRow, MessageInsert>("messages")
+        .from("messages")
         .insert([
           {
             sender_id: userProfile.id,
