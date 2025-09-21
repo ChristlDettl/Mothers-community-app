@@ -35,7 +35,7 @@ export default function Home() {
             <button style={buttonStyle}>Login</button>
           </Link>
           <Link href="/register">
-            <button style={{ padding: "10px 20px" }}>Neu registrieren</button>
+            <button style={buttonStyle}>Neu registrieren</button>
           </Link>
         </div>
       </div>
