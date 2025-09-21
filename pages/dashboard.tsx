@@ -39,6 +39,7 @@ export default function Dashboard() {
         const {
           data: { session },
         } = await supabase.auth.getSession();
+
         if (!session?.user) {
           router.push("/login");
           return;
@@ -80,7 +81,7 @@ export default function Dashboard() {
 
         setLoading(false);
 
-        if (isProfileComplete(profileData) && !editParam) {
+        if (profileData && isProfileComplete(profileData) && !editParam) {
           router.push("/main");
         }
       } catch (err) {
@@ -89,7 +90,7 @@ export default function Dashboard() {
     };
 
     run();
-  }, [router.isReady]);
+  }, [router]);
 
   const handleSave = async () => {
     if (!user || !profile) return;
@@ -142,7 +143,7 @@ export default function Dashboard() {
       alert("Profil gespeichert!");
       setProfile(profileToSave);
       setEditing(false);
-      if (isProfileComplete(profile)) router.push("/main");
+      if (isProfileComplete(profileToSave)) router.push("/main");
     } catch (err) {
       console.error("Fehler beim Geocoding/Speichern:", err);
       alert("Fehler beim Speichern des Profils");
@@ -477,5 +478,6 @@ export default function Dashboard() {
       </div>
     </div>
   );
-                    }
+                        }
+
 
