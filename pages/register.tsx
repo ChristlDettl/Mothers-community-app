@@ -48,21 +48,21 @@ export default function Register() {
             wird beim ersten Login im Dashboard automatisch erstellt.
           </p>
         ) : (
-          <p><form onSubmit={handleRegister}>
+          <form onSubmit={handleRegister}>
             <input
               type="email"
               placeholder="E-Mail"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-            /></p>
-            <p><input
+            />
+            <input
               type="password"
               placeholder="Passwort"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-            /></p>
+            />
             <p>
             <button style={{
               padding: "10px 18px",
