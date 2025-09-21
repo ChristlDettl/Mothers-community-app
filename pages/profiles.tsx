@@ -240,9 +240,12 @@ export default function Profiles() {
                       let genderShort = "–";
                       if (child.gender === "male") genderShort = "m";
                       if (child.gender === "female") genderShort = "w";
+
+                      const yearLabel = child.age === 1 ? "Jahr" : "Jahre";
+
                       return (
                         <li key={i}>
-                          {child.age} Jahre alt ({genderShort})
+                          {child.age} {yearLabel} alt ({genderShort})
                         </li>
                       );
                     })}
@@ -257,4 +260,4 @@ export default function Profiles() {
       </div>
     </div>
   );
-      }
+}
