@@ -14,7 +14,6 @@ export default function Register() {
     setError(null);
 
     try {
-      // 1️⃣ Registrierung beim Auth-System
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -26,10 +25,7 @@ export default function Register() {
         return;
       }
 
-      // ✅ Signup erfolgreich
       console.log("User erfolgreich registriert:", data.user);
-
-      // Hinweis an den User: Profil wird später angelegt
       setSuccess(true);
     } catch (err) {
       console.error("❌ Unerwarteter Fehler beim Signup:", err);
@@ -49,35 +45,43 @@ export default function Register() {
           </p>
         ) : (
           <form onSubmit={handleRegister}>
-            <input
-              type="email"
-              placeholder="E-Mail"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Passwort"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <p>
-            <button style={{
-              padding: "10px 18px",
-              backgroundColor: "#ede9fe", // zartes Pastellviolett
-              color: "#4c1d95", // dunkler Violettton
-              border: "none",
-              borderRadius: "10px",
-              cursor: "pointer",
-              fontWeight: 600,
-              fontFamily: "'Poppins', sans-serif",
-              transition: "all 0.2s ease",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-            }}
-              type="submit">Registrieren</button>
-              </p>
+            <div style={{ marginBottom: 10 }}>
+              <input
+                type="email"
+                placeholder="E-Mail"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={{ padding: "8px", width: "100%", marginBottom: "8px" }}
+              />
+              <input
+                type="password"
+                placeholder="Passwort"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{ padding: "8px", width: "100%", marginBottom: "8px" }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              style={{
+                padding: "10px 18px",
+                backgroundColor: "#ede9fe", // zartes Pastellviolett
+                color: "#4c1d95", // dunkler Violettton
+                border: "none",
+                borderRadius: "10px",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontFamily: "'Poppins', sans-serif",
+                transition: "all 0.2s ease",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+              }}
+            >
+              Registrieren
+            </button>
+
             {error && (
               <pre
                 style={{
@@ -86,6 +90,7 @@ export default function Register() {
                   background: "#fee",
                   padding: "10px",
                   borderRadius: "5px",
+                  marginTop: "10px",
                 }}
               >
                 {error}
