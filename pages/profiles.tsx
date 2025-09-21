@@ -3,31 +3,27 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
 
-// Kleine interne SVG-Icons
-function IconUser(props: any) {
-  return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-function IconMapPin(props: any) {
-  return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
-      <circle cx="12" cy="10" r="2.5" />
-    </svg>
-  );
-}
-function IconMail(props: any) {
-  return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M22 6 12 13 2 6" />
-      <rect x="2" y="6" width="20" height="12" rx="2" />
-    </svg>
-  );
-}
+// Icons
+const UserIcon = () => (
+  <svg className="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
+const MapPinIcon = () => (
+  <svg className="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
+    <circle cx="12" cy="10" r="2.5" />
+  </svg>
+);
+
+const MailIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path d="M22 6 12 13 2 6" />
+    <rect x="2" y="6" width="20" height="12" rx="2" />
+  </svg>
+);
 
 // Alter berechnen
 function calculateAge(birthDate: string) {
@@ -42,7 +38,7 @@ function calculateAge(birthDate: string) {
 
 // Entfernung berechnen
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // Erdradius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -61,22 +57,19 @@ export default function Profiles() {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
 
-  // Filterstates
+  // Filter
+  const [filtersVisible, setFiltersVisible] = useState(false);
   const [searchName, setSearchName] = useState("");
   const [searchCity, setSearchCity] = useState("");
   const [searchGender, setSearchGender] = useState("");
-  const [minChildAge, setMinChildAge] = useState("");
-  const [maxChildAge, setMaxChildAge] = useState("");
   const [minMotherAge, setMinMotherAge] = useState("");
   const [maxMotherAge, setMaxMotherAge] = useState("");
-  const [sortOption, setSortOption] = useState("");
+  const [sortByDistance, setSortByDistance] = useState(false);
 
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         const userId = session?.user?.id;
 
         if (userId) {
@@ -103,7 +96,7 @@ export default function Profiles() {
     fetchProfiles();
   }, []);
 
-  // Filter + Sortierung
+  // Filter anwenden
   useEffect(() => {
     let results = [...profiles];
 
@@ -122,16 +115,6 @@ export default function Profiles() {
         p.children?.some((c: any) => c.gender === searchGender)
       );
     }
-    if (minChildAge) {
-      results = results.filter((p) =>
-        p.children?.some((c: any) => c.age >= parseInt(minChildAge))
-      );
-    }
-    if (maxChildAge) {
-      results = results.filter((p) =>
-        p.children?.some((c: any) => c.age <= parseInt(maxChildAge))
-      );
-    }
     if (minMotherAge) {
       results = results.filter((p) => calculateAge(p.birthdate) >= parseInt(minMotherAge));
     }
@@ -140,39 +123,18 @@ export default function Profiles() {
     }
 
     // Sortierung nach Entfernung
-    if (sortOption === "distance" && userProfile?.latitude && userProfile?.longitude) {
+    if (sortByDistance && userProfile?.latitude && userProfile?.longitude) {
       results.sort((a, b) => {
         if (!a.latitude || !a.longitude) return 1;
         if (!b.latitude || !b.longitude) return -1;
-        const distA = getDistanceFromLatLonInKm(
-          userProfile.latitude,
-          userProfile.longitude,
-          a.latitude,
-          a.longitude
-        );
-        const distB = getDistanceFromLatLonInKm(
-          userProfile.latitude,
-          userProfile.longitude,
-          b.latitude,
-          b.longitude
-        );
+        const distA = getDistanceFromLatLonInKm(userProfile.latitude, userProfile.longitude, a.latitude, a.longitude);
+        const distB = getDistanceFromLatLonInKm(userProfile.latitude, userProfile.longitude, b.latitude, b.longitude);
         return distA - distB;
       });
     }
 
     setFilteredProfiles(results);
-  }, [
-    searchName,
-    searchCity,
-    searchGender,
-    minChildAge,
-    maxChildAge,
-    minMotherAge,
-    maxMotherAge,
-    sortOption,
-    profiles,
-    userProfile,
-  ]);
+  }, [searchName, searchCity, searchGender, minMotherAge, maxMotherAge, sortByDistance, profiles, userProfile]);
 
   if (loading) return <p className="text-center mt-8">Lade Profile...</p>;
 
@@ -181,74 +143,70 @@ export default function Profiles() {
       <NavBar />
 
       <div className="max-w-5xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-bold text-center text-purple-700 mb-8">Alle Mütter</h1>
+        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">Alle Mütter</h1>
 
-        {/* Filterbereich */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-10">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Filter</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="🔍 Name"
-              value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-            />
-            <input
-              type="text"
-              placeholder="📍 Wohnort"
-              value={searchCity}
-              onChange={(e) => setSearchCity(e.target.value)}
-              className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-            />
-            <select
-              value={searchGender}
-              onChange={(e) => setSearchGender(e.target.value)}
-              className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-            >
-              <option value="">👶 Geschlecht Kind</option>
-              <option value="male">Junge</option>
-              <option value="female">Mädchen</option>
-            </select>
-            <input
-              type="number"
-              placeholder="Mindestalter Mutter"
-              value={minMotherAge}
-              onChange={(e) => setMinMotherAge(e.target.value)}
-              className="p-3 rounded-xl border border-gray-300 shadow-sm"
-            />
-            <input
-              type="number"
-              placeholder="Höchstalter Mutter"
-              value={maxMotherAge}
-              onChange={(e) => setMaxMotherAge(e.target.value)}
-              className="p-3 rounded-xl border border-gray-300 shadow-sm"
-            />
-            <input
-              type="number"
-              placeholder="Mindestalter Kind"
-              value={minChildAge}
-              onChange={(e) => setMinChildAge(e.target.value)}
-              className="p-3 rounded-xl border border-gray-300 shadow-sm"
-            />
-            <input
-              type="number"
-              placeholder="Höchstalter Kind"
-              value={maxChildAge}
-              onChange={(e) => setMaxChildAge(e.target.value)}
-              className="p-3 rounded-xl border border-gray-300 shadow-sm"
-            />
-            {/* Sortierung */}
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
-              className="p-3 rounded-xl border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-            >
-              <option value="">🔀 Sortieren</option>
-              <option value="distance">📍 Nach Entfernung</option>
-            </select>
-          </div>
+        {/* Filter Toggle */}
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={() => setFiltersVisible(!filtersVisible)}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow hover:opacity-90 transition"
+          >
+            {filtersVisible ? "Filter ausblenden" : "Filter einblenden"}
+          </button>
         </div>
+
+        {/* Filterbox */}
+        {filtersVisible && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <input
+                type="text"
+                placeholder="🔍 Name"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              />
+              <input
+                type="text"
+                placeholder="📍 Wohnort"
+                value={searchCity}
+                onChange={(e) => setSearchCity(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              />
+              <select
+                value={searchGender}
+                onChange={(e) => setSearchGender(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              >
+                <option value="">👶 Geschlecht Kind</option>
+                <option value="male">Junge (m)</option>
+                <option value="female">Mädchen (w)</option>
+              </select>
+              <input
+                type="number"
+                placeholder="Mindestalter Mutter"
+                value={minMotherAge}
+                onChange={(e) => setMinMotherAge(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300"
+              />
+              <input
+                type="number"
+                placeholder="Höchstalter Mutter"
+                value={maxMotherAge}
+                onChange={(e) => setMaxMotherAge(e.target.value)}
+                className="p-3 rounded-xl border border-gray-300"
+              />
+              <label className="flex items-center gap-2 text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={sortByDistance}
+                  onChange={() => setSortByDistance(!sortByDistance)}
+                />
+                Nach Entfernung sortieren
+              </label>
+            </div>
+          </div>
+        )}
 
         {/* Profile Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -259,14 +217,14 @@ export default function Profiles() {
             >
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <IconUser className="w-6 h-6 text-purple-500" />
+                  <UserIcon />
                   <h2 className="text-xl font-semibold text-gray-800">
                     {profile.full_name || "Anonyme Mutter"}
                   </h2>
                 </div>
                 <p className="text-gray-700 mb-1">🎂 Alter: {calculateAge(profile.birthdate)}</p>
                 <p className="text-gray-700 flex items-center gap-2 mb-3">
-                  <IconMapPin className="w-5 h-5 text-pink-500" />
+                  <MapPinIcon />
                   {profile.city || "Keine Angabe"}
                 </p>
                 <div>
@@ -298,7 +256,7 @@ export default function Profiles() {
                              text-white py-2 px-4 rounded-xl shadow 
                              hover:opacity-90 transition"
                 >
-                  <IconMail className="w-5 h-5" />
+                  <MailIcon />
                   Kontakt aufnehmen
                 </button>
               )}
@@ -308,4 +266,6 @@ export default function Profiles() {
       </div>
     </div>
   );
-}
+        }
+
+
