@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
 import { useRouter } from "next/router";
+import { RealtimePostgresInsertPayload } from "@supabase/supabase-js";
 
 // Typen für Supabase
 type MessageRow = {
@@ -33,7 +34,6 @@ export default function Messages() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Hilfsfunktion: Scrollt immer nach unten
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -95,12 +95,39 @@ export default function Messages() {
     fetchMessages();
   }, [userProfile, receiver_id]);
 
+  // Realtime-Subscription für neue Nachrichten
+  useEffect(() => {
+    if (!userProfile || !receiver_id) return;
+
+    const channel = supabase
+      .channel("messages-realtime")
+      .on<MessageRow>(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `or(and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id}))`,
+        },
+        (payload: RealtimePostgresInsertPayload<MessageRow>) => {
+          const newMsg = payload.new;
+          setMessages((prev) => [...prev, newMsg]);
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userProfile, receiver_id]);
+
   // Nachricht senden
   const sendMessage = async () => {
     if (!newMessage.trim() || !userProfile || !receiver_id) return;
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from<MessageInsert>("messages")
         .insert([
           {
@@ -112,14 +139,9 @@ export default function Messages() {
 
       if (error) {
         console.error("Fehler beim Senden der Nachricht:", error);
-        return;
       }
 
-      if (data && data.length > 0) {
-        setMessages((prev) => [...prev, { ...data[0], created_at: new Date().toISOString() }]);
-        setNewMessage("");
-        scrollToBottom();
-      }
+      setNewMessage(""); // Eingabefeld leeren
     } catch (err) {
       console.error("Fehler beim Senden der Nachricht:", err);
     }
@@ -177,6 +199,7 @@ export default function Messages() {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             />
             <button
               onClick={sendMessage}
@@ -198,7 +221,4 @@ export default function Messages() {
     </div>
   );
 }
-
-
-
 
