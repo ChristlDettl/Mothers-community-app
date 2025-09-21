@@ -184,37 +184,45 @@ export default function Messages() {
     }
   }, [messages, userProfile, receiver_id]);
 
+  
   // Nachricht senden
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !userProfile || !receiver_id) return;
+const sendMessage = async () => {
+  if (!newMessage.trim() || !userProfile || !receiver_id) return;
 
-    try {
-      const { error } = await supabase
-        .from("messages")
-        .insert([
-          {
-            sender_id: userProfile.id,
-            receiver_id,
-            content: newMessage.trim(),
-          },
-        ]);
+  try {
+    const { data, error } = await supabase
+      .from<MessageRow, MessageInsert>("messages")
+      .insert([
+        {
+          sender_id: userProfile.id,
+          receiver_id,
+          content: newMessage.trim(),
+        },
+      ])
+      .select(); // 👈 wichtig, damit die neue Nachricht zurückkommt
 
-      if (error) {
-        console.error("Fehler beim Senden der Nachricht:", error);
-      }
-
-      setNewMessage("");
-      if (presenceChannel) {
-        presenceChannel.track({
-          user_id: userProfile.id,
-          full_name: userProfile.full_name,
-          status: "online",
-        });
-      }
-    } catch (err) {
-      console.error("Fehler beim Senden der Nachricht:", err);
+    if (error) {
+      console.error("Fehler beim Senden der Nachricht:", error);
     }
-  };
+
+    if (data && data.length > 0) {
+      setMessages((prev) => [...prev, data[0]]); // 👈 sofort ins State pushen
+      scrollToBottom();
+    }
+
+    setNewMessage("");
+
+    if (presenceChannel) {
+      presenceChannel.track({
+        user_id: userProfile.id,
+        full_name: userProfile.full_name,
+        status: "online",
+      });
+    }
+  } catch (err) {
+    console.error("Fehler beim Senden der Nachricht:", err);
+  }
+};
 
   // Tipp-Status setzen
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
