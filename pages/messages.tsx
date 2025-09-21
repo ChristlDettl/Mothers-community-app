@@ -80,7 +80,7 @@ export default function Messages() {
       setLoading(true);
       try {
         const { data: msgs } = await supabase
-          .from<MessageRow>("messages")
+          .from<MessageRow, MessageRow>("messages")
           .select("*")
           .or(
             `and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id})`
