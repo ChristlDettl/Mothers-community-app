@@ -1,5 +1,6 @@
 // pages/profiles.tsx
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { supabase } from "../lib/supabaseClient";
 import NavBar from "../components/NavBar";
 
@@ -30,6 +31,7 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
 }
 
 export default function Profiles() {
+  const router = useRouter();
   const [profiles, setProfiles] = useState<any[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +131,11 @@ export default function Profiles() {
     setFilteredProfiles(results);
   }, [minMotherAge, maxMotherAge, minChildAge, maxChildAge, maxDistance, searchCity, profiles, userProfile]);
 
+  // Navigiert zur Inbox oder Chat mit Empfänger
+  const goToInbox = (profile: any) => {
+    router.push(`/messages?receiver_id=${profile.id}`);
+  };
+
   if (loading) return <p style={{ textAlign: "center" }}>Lade Profile...</p>;
 
   return (
@@ -137,14 +144,14 @@ export default function Profiles() {
       <div style={{ maxWidth: "900px", margin: "40px auto", padding: "20px" }}>
         <h1 style={{ textAlign: "center", marginBottom: "30px" }}>Alle Mütter</h1>
 
-        {/* Button zum Aufklappen */}
+        {/* Filter-Button */}
         <div style={{ textAlign: "center", marginBottom: "20px" }}>
           <button
             onClick={() => setShowFilters(!showFilters)}
             style={{
               padding: "10px 18px",
-              backgroundColor: "#ede9fe", // Pastellviolett
-              color: "#4c1d95", // dunkler Violettton
+              backgroundColor: "#ede9fe",
+              color: "#4c1d95",
               border: "none",
               borderRadius: "10px",
               cursor: "pointer",
@@ -244,12 +251,8 @@ export default function Profiles() {
                 {profile.children && profile.children.length > 0 ? (
                   <ul>
                     {profile.children.map((child: any, i: number) => {
-                      let genderShort = "–";
-                      if (child.gender === "male") genderShort = "m";
-                      if (child.gender === "female") genderShort = "w";
-
+                      let genderShort = child.gender === "male" ? "m" : child.gender === "female" ? "w" : "–";
                       const yearLabel = child.age === 1 ? "Jahr" : "Jahre";
-
                       return (
                         <li key={i}>
                           {child.age} {yearLabel} alt ({genderShort})
@@ -264,7 +267,7 @@ export default function Profiles() {
 
               {/* Kontakt-Button */}
               <button
-                onClick={() => alert(`Kontakt aufnehmen mit ${profile.full_name || "dieser Mutter"}`)}
+                onClick={() => goToInbox(profile)}
                 style={{
                   position: "absolute",
                   top: "20px",
@@ -294,5 +297,6 @@ export default function Profiles() {
       </div>
     </div>
   );
-                  }
+              }
+
 
