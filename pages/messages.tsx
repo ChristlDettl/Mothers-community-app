@@ -42,6 +42,11 @@ export default function Messages() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Auto-Scroll immer, wenn sich die Nachrichtenliste ändert
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   // Eigene Profildaten laden
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -88,7 +93,6 @@ export default function Messages() {
           .order("created_at", { ascending: true });
 
         setMessages(msgs || []);
-        scrollToBottom();
       } catch (err) {
         console.error("Fehler beim Laden der Nachrichten:", err);
       } finally {
@@ -122,7 +126,6 @@ export default function Messages() {
             }
             return [...prev, newMsg];
           });
-          scrollToBottom();
         }
       )
       .subscribe();
@@ -184,45 +187,43 @@ export default function Messages() {
     }
   }, [messages, userProfile, receiver_id]);
 
-  
   // Nachricht senden
-const sendMessage = async () => {
-  if (!newMessage.trim() || !userProfile || !receiver_id) return;
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !userProfile || !receiver_id) return;
 
-  try {
-    const { data, error } = await supabase
-      .from("messages")
-      .insert([
-        {
-          sender_id: userProfile.id,
-          receiver_id,
-          content: newMessage.trim(),
-        },
-      ])
-      .select(); // 👈 wichtig, damit die neue Nachricht zurückkommt
+    try {
+      const { data, error } = await supabase
+        .from<MessageRow, MessageInsert>("messages")
+        .insert([
+          {
+            sender_id: userProfile.id,
+            receiver_id,
+            content: newMessage.trim(),
+          },
+        ])
+        .select();
 
-    if (error) {
-      console.error("Fehler beim Senden der Nachricht:", error);
+      if (error) {
+        console.error("Fehler beim Senden der Nachricht:", error);
+      }
+
+      if (data && data.length > 0) {
+        setMessages((prev) => [...prev, data[0]]);
+      }
+
+      setNewMessage("");
+
+      if (presenceChannel) {
+        presenceChannel.track({
+          user_id: userProfile.id,
+          full_name: userProfile.full_name,
+          status: "online",
+        });
+      }
+    } catch (err) {
+      console.error("Fehler beim Senden der Nachricht:", err);
     }
-
-    if (data && data.length > 0) {
-      setMessages((prev) => [...prev, data[0]]); // 👈 sofort ins State pushen
-      scrollToBottom();
-    }
-
-    setNewMessage("");
-
-    if (presenceChannel) {
-      presenceChannel.track({
-        user_id: userProfile.id,
-        full_name: userProfile.full_name,
-        status: "online",
-      });
-    }
-  } catch (err) {
-    console.error("Fehler beim Senden der Nachricht:", err);
-  }
-};
+  };
 
   // Tipp-Status setzen
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -336,5 +337,5 @@ const sendMessage = async () => {
       </div>
     </div>
   );
-          }
+        }
 
