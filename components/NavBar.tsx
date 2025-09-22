@@ -1,25 +1,29 @@
 // components/NavBar.tsx
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useRouter } from "next/router";
 import Link from "next/link";
 
 export default function NavBar() {
   const [unreadCount, setUnreadCount] = useState(0);
+  const [lastSender, setLastSender] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/"; // nach Logout zurück zur Start-Seite
   };
 
-  // 🔔 Ungelesene Nachrichten laden
+  // 🔔 Ungelesene Nachrichten + letzte Unterhaltung laden
   useEffect(() => {
-    const loadUnread = async () => {
+    const loadUnreadAndLast = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       const userId = session?.user?.id;
       if (!userId) return;
 
+      // Ungelesene Nachrichten zählen
       const { count, error } = await supabase
         .from("messages")
         .select("*", { count: "exact", head: true })
@@ -29,35 +33,45 @@ export default function NavBar() {
       if (!error) {
         setUnreadCount(count || 0);
       }
+
+      // Letzte empfangene Nachricht finden
+      const { data: lastMsg } = await supabase
+        .from("messages")
+        .select("sender_id, created_at")
+        .eq("receiver_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (lastMsg && lastMsg.length > 0) {
+        setLastSender(lastMsg[0].sender_id);
+      } else {
+        setLastSender(null);
+      }
     };
 
-    loadUnread();
+    loadUnreadAndLast();
 
-    // Echtzeit-Update für neue/aktualisierte Nachrichten
+    // Echtzeit-Update
     const channel = supabase
       .channel("navbar-unread")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
-        (payload) => {
-          if (payload.new.receiver_id) {
-            loadUnread();
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "messages" },
-        () => {
-          loadUnread();
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
+        loadUnreadAndLast();
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // 📩 Klick-Handler
+  const handleMessagesClick = () => {
+    if (lastSender) {
+      router.push(`/messages?receiver_id=${lastSender}`);
+    } else {
+      router.push("/messages");
+    }
+  };
 
   return (
     <nav
@@ -96,7 +110,16 @@ export default function NavBar() {
         }}
       >
         {/* Nachrichten-Link mit Badge */}
-        <Link href="/messages" style={{ position: "relative", fontSize: "22px" }}>
+        <button
+          onClick={handleMessagesClick}
+          style={{
+            position: "relative",
+            fontSize: "22px",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
           📩
           {unreadCount > 0 && (
             <span
@@ -116,7 +139,7 @@ export default function NavBar() {
               {unreadCount}
             </span>
           )}
-        </Link>
+        </button>
 
         {/* Hauptmenü */}
         <Link href="/main">
@@ -163,5 +186,4 @@ export default function NavBar() {
       </div>
     </nav>
   );
-                }
-
+          }
