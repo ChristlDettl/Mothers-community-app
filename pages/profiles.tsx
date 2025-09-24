@@ -65,7 +65,7 @@ export default function Profiles() {
 
         const { data: profilesData } = await supabase
           .from("profiles")
-          .select("id, full_name, birthdate, city, latitude, longitude, children(*)");
+          .select("id, full_name, birthdate, city, latitude, longitude, avatar_url, children(*)");
 
         setProfiles(profilesData || []);
         setFilteredProfiles(profilesData || []);
@@ -134,6 +134,15 @@ export default function Profiles() {
   // Navigiert zur Inbox oder Chat mit Empfänger
   const goToInbox = (profile: any) => {
     router.push(`/messages?receiver_id=${profile.id}`);
+  };
+
+  // Öffnet Foto in neuem Tab
+  const openPhoto = (profile: any) => {
+    if (profile.avatar_url) {
+      window.open(profile.avatar_url, "_blank");
+    } else {
+      alert("Dieses Profil hat noch kein Foto hochgeladen.");
+    }
   };
 
   if (loading) return <p style={{ textAlign: "center" }}>Lade Profile...</p>;
@@ -265,38 +274,57 @@ export default function Profiles() {
                 )}
               </div>
 
-              {/* Kontakt-Button */}
-              <button
-                onClick={() => goToInbox(profile)}
-                style={{
-                  position: "absolute",
-                  top: "20px",
-                  right: "20px",
-                  backgroundColor: "#ede9fe",
-                  color: "#4c1d95",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: "40px",
-                  height: "40px",
-                  cursor: "pointer",
-                  fontSize: "18px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
-              >
-                ✉️
-              </button>
+              {/* Buttons */}
+              <div style={{ position: "absolute", top: "20px", right: "20px", display: "flex", gap: "10px" }}>
+                {/* Brief */}
+                <button
+                  onClick={() => goToInbox(profile)}
+                  style={{
+                    backgroundColor: "#ede9fe",
+                    color: "#4c1d95",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "40px",
+                    height: "40px",
+                    cursor: "pointer",
+                    fontSize: "18px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  ✉️
+                </button>
+
+                {/* Foto */}
+                <button
+                  onClick={() => openPhoto(profile)}
+                  style={{
+                    backgroundColor: "#e0f2fe",
+                    color: "#075985",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "40px",
+                    height: "40px",
+                    cursor: "pointer",
+                    fontSize: "18px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  📷
+                </button>
+              </div>
             </div>
           );
         })}
       </div>
     </div>
   );
-              }
-
+            }
 
