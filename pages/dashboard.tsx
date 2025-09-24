@@ -1,4 +1,4 @@
-// pages/dashboard.tsx
+/// pages/dashboard.tsx
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabaseClient";
@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -61,7 +62,9 @@ export default function Dashboard() {
             full_name: "",
             birthdate: "",
             city: "",
-            avatar_url: "",
+            latitude: null,
+            longitude: null,
+            avatar_url: null,
           });
         } else {
           setProfile(profileData);
@@ -87,17 +90,18 @@ export default function Dashboard() {
         }
       } catch (err) {
         console.error("Unerwarteter Fehler im Dashboard:", err);
+        setLoading(false);
       }
     };
 
     run();
-  }, [router]);
+  }, [router.isReady]); // router.isReady reicht hier
 
   const handleSave = async () => {
     if (!user || !profile) return;
 
     try {
-      // 1. Geocoding
+      // 1) Geocoding (optional)
       let latitude = profile.latitude;
       let longitude = profile.longitude;
 
@@ -116,7 +120,7 @@ export default function Dashboard() {
 
       const profileToSave = { ...profile, latitude, longitude };
 
-      // 2. Profil speichern
+      // 2) Profil upserten
       const { error: profileError } = await supabase
         .from("profiles")
         .upsert(profileToSave, { onConflict: "id" })
@@ -127,7 +131,7 @@ export default function Dashboard() {
         return;
       }
 
-      // 3. Kinder speichern
+      // 3) Kinder speichern: löschen + neu einfügen
       await supabase.from("children").delete().eq("profile_id", user.id);
 
       if (children.length > 0) {
@@ -151,27 +155,96 @@ export default function Dashboard() {
     }
   };
 
-  // 📌 Foto-Upload-Handler
+  // --- Upload Handler ---
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${user.id}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
+    try {
+      setUploading(true);
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { upsert: true });
+      // upload (upsert true damit beim erneuten Upload ersetzt wird)
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
 
-    if (uploadError) {
-      alert("Fehler beim Hochladen des Fotos: " + uploadError.message);
-      return;
+      if (uploadError) {
+        console.error("Upload-Error:", uploadError);
+        alert("Fehler beim Hochladen des Fotos: " + uploadError.message);
+        setUploading(false);
+        return;
+      }
+
+      // öffentliche URL holen
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+      // in profiles speichern
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+
+      if (updateError) {
+        console.error("DB-Update-Error:", updateError);
+        alert("Fehler beim Speichern der Bild-URL: " + updateError.message);
+        setUploading(false);
+        return;
+      }
+
+      setProfile({ ...profile, avatar_url: publicUrl });
+      setUploading(false);
+      alert("Foto erfolgreich hochgeladen.");
+    } catch (err) {
+      console.error("Unerwarteter Upload-Fehler:", err);
+      alert("Unerwarteter Fehler beim Hochladen");
+      setUploading(false);
     }
+  };
 
-    const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+  // --- Remove Photo ---
+  const handleRemovePhoto = async () => {
+    if (!user || !profile?.avatar_url) return;
 
-    setProfile({ ...profile, avatar_url: data.publicUrl });
+    try {
+      // 1) Datei-Name aus URL extrahieren
+      const url = profile.avatar_url as string;
+      const withoutQuery = url.split("?")[0];
+      const parts = withoutQuery.split("/");
+      const filename = parts[parts.length - 1]; // z.B. userId.jpg
+      const filePath = `avatars/${filename}`;
+
+      // 2) Datei aus Storage löschen (falls vorhanden)
+      const { error: removeError } = await supabase.storage
+        .from("avatars")
+        .remove([filePath]);
+
+      if (removeError) {
+        console.warn("Fehler beim Entfernen aus Storage (evtl. nicht vorhanden):", removeError);
+        // wir fahren trotzdem fort und setzen avatar_url auf null
+      }
+
+      // 3) DB-Feld avatar_url entfernen
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: null })
+        .eq("id", user.id);
+
+      if (updateError) {
+        alert("Fehler beim Entfernen des Fotos: " + updateError.message);
+        return;
+      }
+
+      setProfile({ ...profile, avatar_url: null });
+      alert("Foto entfernt.");
+    } catch (err) {
+      console.error("Unerwarteter Fehler beim Entfernen des Fotos:", err);
+      alert("Fehler beim Entfernen des Fotos");
+    }
   };
 
   if (loading) return <p style={{ textAlign: "center" }}>Lade...</p>;
@@ -210,8 +283,8 @@ export default function Dashboard() {
         </h1>
 
         {!editing ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            {profile?.avatar_url && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "15px", alignItems: "center" }}>
+            {profile?.avatar_url ? (
               <img
                 src={profile.avatar_url}
                 alt="Profilfoto"
@@ -220,50 +293,86 @@ export default function Dashboard() {
                   height: "120px",
                   objectFit: "cover",
                   borderRadius: "50%",
-                  marginBottom: "15px",
+                  marginBottom: "10px",
                 }}
               />
+            ) : (
+              <div
+                style={{
+                  width: "120px",
+                  height: "120px",
+                  borderRadius: "50%",
+                  backgroundColor: "#f3f4f6",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#9ca3af",
+                  marginBottom: "10px",
+                }}
+              >
+                Foto
+              </div>
             )}
-            <p><strong>Name:</strong> {profile?.full_name || "—"}</p>
-            <p><strong>Geburtsdatum:</strong> {profile?.birthdate || "—"}</p>
-            <p><strong>Alter:</strong> {calculateAge(profile?.birthdate)}</p>
-            <p><strong>Wohnort:</strong> {profile?.city || "—"}</p>
-            <p><strong>Kinder:</strong></p>
-            <ul>
-              {children.length > 0 ? (
-                children.map((child, i) => (
-                  <li key={child.id || i}>
-                    Kind {i + 1}: {child.age} Jahre{" "}
-                    {child.gender === "male"
-                      ? "(Junge)"
-                      : child.gender === "female"
-                      ? "(Mädchen)"
-                      : ""}
-                  </li>
-                ))
-              ) : (
-                <li>Keine Kinder eingetragen</li>
-              )}
-            </ul>
 
-            <button
-              onClick={() => setEditing(true)}
-              style={{
-                marginTop: "20px",
-                padding: "12px 20px",
-                backgroundColor: "#ede9fe",
-                color: "#4c1d95",
-                fontWeight: 600,
-                border: "none",
-                borderRadius: "12px",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
-            >
-              Profil bearbeiten
-            </button>
+            <div style={{ width: "100%", textAlign: "left" }}>
+              <p><strong>Name:</strong> {profile?.full_name || "—"}</p>
+              <p><strong>Geburtsdatum:</strong> {profile?.birthdate || "—"}</p>
+              <p><strong>Alter:</strong> {calculateAge(profile?.birthdate)}</p>
+              <p><strong>Wohnort:</strong> {profile?.city || "—"}</p>
+
+              <p style={{ marginTop: 10 }}><strong>Kinder:</strong></p>
+              <ul>
+                {children.length > 0 ? (
+                  children.map((child, i) => (
+                    <li key={child.id || i}>
+                      Kind {i + 1}: {child.age} {child.age === 1 ? "Jahr" : "Jahre"}{" "}
+                      {child.gender === "male" ? "(Junge)" : child.gender === "female" ? "(Mädchen)" : ""}
+                    </li>
+                  ))
+                ) : (
+                  <li>Keine Kinder eingetragen</li>
+                )}
+              </ul>
+            </div>
+
+            <div style={{ width: "100%", display: "flex", gap: "12px", marginTop: 10 }}>
+              <button
+                onClick={() => setEditing(true)}
+                style={{
+                  padding: "12px 20px",
+                  backgroundColor: "#ede9fe",
+                  color: "#4c1d95",
+                  fontWeight: 600,
+                  border: "none",
+                  borderRadius: "12px",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
+              >
+                Profil bearbeiten
+              </button>
+
+              {profile?.avatar_url && (
+                <button
+                  onClick={handleRemovePhoto}
+                  style={{
+                    padding: "12px 20px",
+                    backgroundColor: "#fecaca",
+                    color: "#7f1d1d",
+                    fontWeight: 600,
+                    border: "none",
+                    borderRadius: "12px",
+                    cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                  }}
+                >
+                  Foto entfernen
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div
@@ -279,14 +388,8 @@ export default function Dashboard() {
             <input
               type="text"
               value={profile?.full_name || ""}
-              onChange={(e) =>
-                setProfile({ ...profile, full_name: e.target.value })
-              }
-              style={{
-                padding: "10px",
-                borderRadius: "10px",
-                border: "1px solid #d1d5db",
-              }}
+              onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+              style={{ padding: "10px", borderRadius: "10px", border: "1px solid #d1d5db" }}
             />
 
             {/* Geburtsdatum */}
@@ -294,14 +397,8 @@ export default function Dashboard() {
             <input
               type="date"
               value={profile?.birthdate || ""}
-              onChange={(e) =>
-                setProfile({ ...profile, birthdate: e.target.value })
-              }
-              style={{
-                padding: "10px",
-                borderRadius: "10px",
-                border: "1px solid #d1d5db",
-              }}
+              onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
+              style={{ padding: "10px", borderRadius: "10px", border: "1px solid #d1d5db" }}
             />
 
             {/* Wohnort */}
@@ -309,35 +406,54 @@ export default function Dashboard() {
             <input
               type="text"
               value={profile?.city || ""}
-              onChange={(e) =>
-                setProfile({ ...profile, city: e.target.value })
-              }
-              style={{
-                padding: "10px",
-                borderRadius: "10px",
-                border: "1px solid #d1d5db",
-              }}
+              onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+              style={{ padding: "10px", borderRadius: "10px", border: "1px solid #d1d5db" }}
             />
 
             {/* Profilfoto */}
             <label style={{ fontWeight: 600 }}>Profilfoto:</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              style={{
-                padding: "8px",
-                borderRadius: "10px",
-                border: "1px solid #d1d5db",
-              }}
-            />
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {profile?.avatar_url ? (
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <img
+                    src={profile.avatar_url}
+                    alt="Profilfoto"
+                    style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    style={{
+                      backgroundColor: "#fecaca",
+                      color: "#7f1d1d",
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Bild entfernen
+                  </button>
+                </div>
+              ) : (
+                <p style={{ color: "#6b7280" }}>Noch kein Foto hochgeladen</p>
+              )}
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                style={{ padding: "8px", borderRadius: "10px", border: "1px solid #d1d5db" }}
+              />
+            </div>
 
             {/* Kinder */}
             <label style={{ fontWeight: 600 }}>Kinder:</label>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {children.map((child, i) => (
                 <div key={child.id || i} style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
                     <span>Kind {i + 1}:</span>
                     <input
                       type="number"
@@ -345,18 +461,10 @@ export default function Dashboard() {
                       value={child.age || ""}
                       onChange={(e) => {
                         const newChildren = [...children];
-                        newChildren[i] = {
-                          ...newChildren[i],
-                          age: parseInt(e.target.value || "0"),
-                        };
+                        newChildren[i] = { ...newChildren[i], age: parseInt(e.target.value || "0") };
                         setChildren(newChildren);
                       }}
-                      style={{
-                        padding: "8px",
-                        borderRadius: "10px",
-                        border: "1px solid #d1d5db",
-                        width: "80px",
-                      }}
+                      style={{ padding: "8px", borderRadius: "10px", border: "1px solid #d1d5db", width: "80px" }}
                     />
 
                     <select
@@ -366,11 +474,7 @@ export default function Dashboard() {
                         newChildren[i] = { ...newChildren[i], gender: e.target.value };
                         setChildren(newChildren);
                       }}
-                      style={{
-                        padding: "8px",
-                        borderRadius: "10px",
-                        border: "1px solid #d1d5db",
-                      }}
+                      style={{ padding: "8px", borderRadius: "10px", border: "1px solid #d1d5db" }}
                     >
                       <option value="none">Keine Angabe</option>
                       <option value="male">Junge</option>
@@ -379,40 +483,20 @@ export default function Dashboard() {
 
                     <button
                       type="button"
-                      onClick={() =>
-                        setChildren(children.filter((_, idx) => idx !== i))
-                      }
-                      style={{
-                        padding: "6px 10px",
-                        backgroundColor: "#fca5a5",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                      }}
+                      onClick={() => setChildren(children.filter((_, idx) => idx !== i))}
+                      style={{ padding: "6px 10px", backgroundColor: "#fca5a5", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
                     >
                       ❌
                     </button>
                   </div>
-                  <small style={{ color: "#6b7280", marginLeft: "65px" }}>
-                    Alter und Geschlecht deines Kindes
-                  </small>
+                  <small style={{ color: "#6b7280", marginLeft: "6px" }}>Alter und Geschlecht deines Kindes</small>
                 </div>
               ))}
+
               <button
                 type="button"
-                onClick={() =>
-                  setChildren([...children, { profile_id: user.id, age: 0, gender: "none" }])
-                }
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: "10px",
-                  backgroundColor: "#e5e7eb",
-                  border: "1px solid #e5e7eb",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  width: "fit-content",
-                }}
+                onClick={() => setChildren([...children, { profile_id: user.id, age: 0, gender: "none" }])}
+                style={{ padding: "8px 12px", borderRadius: "10px", backgroundColor: "#e5e7eb", border: "1px solid #e5e7eb", fontSize: "14px", cursor: "pointer", width: "fit-content" }}
               >
                 ➕ Kind hinzufügen
               </button>
@@ -440,6 +524,7 @@ export default function Dashboard() {
               >
                 Speichern
               </button>
+
               <button
                 onClick={() => router.push("/main")}
                 style={{
@@ -447,12 +532,9 @@ export default function Dashboard() {
                   backgroundColor: "#fecaca",
                   color: "#7f1d1d",
                   border: "none",
-                  borderRadius: "10px",
+                  borderRadius: "12px",
                   cursor: "pointer",
                   fontWeight: 600,
-                  fontFamily: "'Poppins', sans-serif",
-                  transition: "all 0.2s ease",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
                 }}
               >
                 Abbrechen
@@ -468,18 +550,14 @@ export default function Dashboard() {
                 paddingTop: "20px",
               }}
             >
-              <h3 style={{ color: "#b91c1c", marginBottom: "10px" }}>
-                ⚠️ Account löschen
-              </h3>
+              <h3 style={{ color: "#b91c1c", marginBottom: "10px" }}>⚠️ Account löschen</h3>
               <p style={{ color: "#555", marginBottom: "15px" }}>
-                Wenn du dein Profil und deinen Account löschst, werden alle
-                deine Daten unwiderruflich entfernt.
+                Wenn du dein Profil und deinen Account löschst, werden alle deine Daten unwiderruflich entfernt.
               </p>
               <button
                 onClick={async () => {
                   const confirmed = window.confirm(
-                    "Bist du sicher, dass du dein Konto endgültig löschen möchtest?\n\n" +
-                      "Dieser Vorgang kann NICHT rückgängig gemacht werden!"
+                    "Bist du sicher, dass du dein Konto endgültig löschen möchtest?\n\nDieser Vorgang kann NICHT rückgängig gemacht werden!"
                   );
                   if (!confirmed) return;
 
@@ -499,7 +577,6 @@ export default function Dashboard() {
                     });
 
                     const result = await response.json();
-
                     if (!response.ok) {
                       alert("Fehler beim Löschen: " + result.error);
                       return;
@@ -530,6 +607,8 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
+        }
 
-
+                                                 
+                                                 
+                            
