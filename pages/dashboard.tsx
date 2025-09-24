@@ -61,6 +61,7 @@ export default function Dashboard() {
             full_name: "",
             birthdate: "",
             city: "",
+            avatar_url: "",
           });
         } else {
           setProfile(profileData);
@@ -150,6 +151,29 @@ export default function Dashboard() {
     }
   };
 
+  // 📌 Foto-Upload-Handler
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user.id}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      alert("Fehler beim Hochladen des Fotos: " + uploadError.message);
+      return;
+    }
+
+    const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+    setProfile({ ...profile, avatar_url: data.publicUrl });
+  };
+
   if (loading) return <p style={{ textAlign: "center" }}>Lade...</p>;
   if (!user) return <p style={{ textAlign: "center" }}>Nicht eingeloggt</p>;
 
@@ -187,9 +211,23 @@ export default function Dashboard() {
 
         {!editing ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+            {profile?.avatar_url && (
+              <img
+                src={profile.avatar_url}
+                alt="Profilfoto"
+                style={{
+                  width: "120px",
+                  height: "120px",
+                  objectFit: "cover",
+                  borderRadius: "50%",
+                  marginBottom: "15px",
+                }}
+              />
+            )}
             <p><strong>Name:</strong> {profile?.full_name || "—"}</p>
             <p><strong>Geburtsdatum:</strong> {profile?.birthdate || "—"}</p>
             <p><strong>Alter:</strong> {calculateAge(profile?.birthdate)}</p>
+            <p><strong>Wohnort:</strong> {profile?.city || "—"}</p>
             <p><strong>Kinder:</strong></p>
             <ul>
               {children.length > 0 ? (
@@ -207,7 +245,6 @@ export default function Dashboard() {
                 <li>Keine Kinder eingetragen</li>
               )}
             </ul>
-            <p><strong>Wohnort:</strong> {profile?.city || "—"}</p>
 
             <button
               onClick={() => setEditing(true)}
@@ -237,7 +274,7 @@ export default function Dashboard() {
               alignItems: "center",
             }}
           >
-            {/* Eingaben */}
+            {/* Name */}
             <label style={{ fontWeight: 600 }}>Name:</label>
             <input
               type="text"
@@ -252,6 +289,7 @@ export default function Dashboard() {
               }}
             />
 
+            {/* Geburtsdatum */}
             <label style={{ fontWeight: 600 }}>Geburtsdatum:</label>
             <input
               type="date"
@@ -266,6 +304,7 @@ export default function Dashboard() {
               }}
             />
 
+            {/* Wohnort */}
             <label style={{ fontWeight: 600 }}>Wohnort:</label>
             <input
               type="text"
@@ -275,6 +314,19 @@ export default function Dashboard() {
               }
               style={{
                 padding: "10px",
+                borderRadius: "10px",
+                border: "1px solid #d1d5db",
+              }}
+            />
+
+            {/* Profilfoto */}
+            <label style={{ fontWeight: 600 }}>Profilfoto:</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              style={{
+                padding: "8px",
                 borderRadius: "10px",
                 border: "1px solid #d1d5db",
               }}
@@ -370,30 +422,30 @@ export default function Dashboard() {
             <div></div>
             <div style={{ display: "flex", gap: "10px" }}>
               <button
-               onClick={handleSave}
-               style={{
-               padding: "12px 20px",
-               backgroundColor: "#ede9fe", // Pastellviolett
-               color: "#4c1d95", // dunkler Violettton
-               fontWeight: 600,
-               border: "none",
-               borderRadius: "12px",
-               flex: 1,
-               cursor: "pointer",
-               transition: "all 0.2s ease",
-               boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-               }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
+                onClick={handleSave}
+                style={{
+                  padding: "12px 20px",
+                  backgroundColor: "#ede9fe",
+                  color: "#4c1d95",
+                  fontWeight: 600,
+                  border: "none",
+                  borderRadius: "12px",
+                  flex: 1,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
               >
-              Speichern
+                Speichern
               </button>
               <button
                 onClick={() => router.push("/main")}
                 style={{
                   padding: "10px 18px",
-                  backgroundColor: "#fecaca", // zartes Rosa
-                  color: "#7f1d1d", // dunkles Rotbraun
+                  backgroundColor: "#fecaca",
+                  color: "#7f1d1d",
                   border: "none",
                   borderRadius: "10px",
                   cursor: "pointer",
@@ -401,10 +453,10 @@ export default function Dashboard() {
                   fontFamily: "'Poppins', sans-serif",
                   transition: "all 0.2s ease",
                   boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-                 }}
-                    >
-                      Abbrechen
-                </button>
+                }}
+              >
+                Abbrechen
+              </button>
             </div>
 
             {/* Account löschen */}
@@ -478,6 +530,6 @@ export default function Dashboard() {
       </div>
     </div>
   );
-                        }
+}
 
 
