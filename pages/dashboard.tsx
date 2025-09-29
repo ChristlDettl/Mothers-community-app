@@ -164,13 +164,13 @@ export default function Dashboard() {
       setUploading(true);
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      // Datei-Pfad in eigenem User-Ordner
+      const filePath = `${user.id}/${fileName}`;
 
-      // upload (upsert true damit beim erneuten Upload ersetzt wird)
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from("profile_pictures")
         .upload(filePath, file, { upsert: true });
-
+      
       if (uploadError) {
         console.error("Upload-Error:", uploadError);
         alert("Fehler beim Hochladen des Fotos: " + uploadError.message);
