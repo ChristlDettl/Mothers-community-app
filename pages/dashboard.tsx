@@ -215,13 +215,12 @@ export default function Dashboard() {
       const withoutQuery = url.split("?")[0];
       const parts = withoutQuery.split("/");
       const filename = parts[parts.length - 1]; // z.B. userId.jpg
-      const filePath = `avatars/${filename}`;
+      const filePath = `${user.id}/${filename}`;
 
-      // 2) Datei aus Storage löschen (falls vorhanden)
       const { error: removeError } = await supabase.storage
-        .from("avatars")
+        .from("profile_pictures")
         .remove([filePath]);
-
+      
       if (removeError) {
         console.warn("Fehler beim Entfernen aus Storage (evtl. nicht vorhanden):", removeError);
         // wir fahren trotzdem fort und setzen avatar_url auf null
