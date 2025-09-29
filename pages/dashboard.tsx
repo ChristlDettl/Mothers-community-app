@@ -181,8 +181,7 @@ export default function Dashboard() {
       // öffentliche URL holen
       const {
         data: { publicUrl },
-      } = supabase.storage.from("avatars").getPublicUrl(filePath);
-
+      } = supabase.storage.from("profile_pictures").getPublicUrl(filePath);
       // in profiles speichern
       const { error: updateError } = await supabase
         .from("profiles")
