@@ -26,7 +26,10 @@ export default function Dashboard() {
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+
+  // Upload-States
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -95,13 +98,12 @@ export default function Dashboard() {
     };
 
     run();
-  }, [router.isReady]); // router.isReady reicht hier
+  }, [router.isReady]);
 
   const handleSave = async () => {
     if (!user || !profile) return;
 
     try {
-      // 1) Geocoding (optional)
       let latitude = profile.latitude;
       let longitude = profile.longitude;
 
@@ -120,7 +122,6 @@ export default function Dashboard() {
 
       const profileToSave = { ...profile, latitude, longitude };
 
-      // 2) Profil upserten
       const { error: profileError } = await supabase
         .from("profiles")
         .upsert(profileToSave, { onConflict: "id" })
@@ -131,7 +132,6 @@ export default function Dashboard() {
         return;
       }
 
-      // 3) Kinder speichern: löschen + neu einfügen
       await supabase.from("children").delete().eq("profile_id", user.id);
 
       if (children.length > 0) {
@@ -150,109 +150,109 @@ export default function Dashboard() {
       setEditing(false);
       if (isProfileComplete(profileToSave)) router.push("/main");
     } catch (err) {
-      console.error("Fehler beim Geocoding/Speichern:", err);
+      console.error("Fehler beim Speichern:", err);
       alert("Fehler beim Speichern des Profils");
     }
   };
 
   // --- Upload Handler ---
-const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file || !user) return;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
 
-  try {
-    setUploading(true);
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${user.id}.${fileExt}`;
-    const filePath = `${user.id}/${fileName}`;
+    try {
+      setUploading(true);
+      setUploadProgress(0);
 
-    // Datei hochladen
-    const { error: uploadError } = await supabase.storage
-      .from("profile_pictures")
-      .upload(filePath, file, { upsert: true });
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
 
-    if (uploadError) {
-      console.error("Upload-Error:", uploadError);
-      alert("Fehler beim Hochladen des Fotos: " + uploadError.message);
+      // Upload mit Fortschritt
+      const xhr = new XMLHttpRequest();
+      xhr.open(
+        "POST",
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/profile_pictures/${filePath}`
+      );
+      xhr.setRequestHeader(
+        "Authorization",
+        `Bearer ${supabase.auth.session()?.access_token}`
+      );
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percent);
+        }
+      };
+
+      xhr.onload = async () => {
+        if (xhr.status !== 200 && xhr.status !== 201) {
+          alert("Fehler beim Hochladen des Fotos.");
+          setUploading(false);
+          return;
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("profile_pictures").getPublicUrl(filePath);
+
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            avatar_url: publicUrl,
+            avatar_path: filePath,
+          })
+          .eq("id", user.id);
+
+        if (updateError) {
+          alert("Fehler beim Speichern der Bild-URL: " + updateError.message);
+          setUploading(false);
+          return;
+        }
+
+        setProfile({ ...profile, avatar_url: publicUrl, avatar_path: filePath });
+        setUploading(false);
+        setUploadProgress(0);
+        alert("Foto erfolgreich hochgeladen.");
+      };
+
+      xhr.send(file);
+    } catch (err) {
+      console.error("Upload-Fehler:", err);
+      alert("Fehler beim Hochladen");
       setUploading(false);
-      return;
+      setUploadProgress(0);
     }
+  };
 
-    // öffentliche URL holen
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("profile_pictures").getPublicUrl(filePath);
+  // --- Remove Photo ---
+  const handleRemovePhoto = async () => {
+    if (!user || !profile?.avatar_path) return;
 
-    // in profiles speichern (avatar_url + avatar_path)
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({
-        avatar_url: publicUrl,
-        avatar_path: filePath, // NEU: relativer Pfad für späteres Löschen
-      })
-      .eq("id", user.id);
+    try {
+      await supabase.storage
+        .from("profile_pictures")
+        .remove([profile.avatar_path]);
 
-    if (updateError) {
-      console.error("DB-Update-Error:", updateError);
-      alert("Fehler beim Speichern der Bild-URL: " + updateError.message);
-      setUploading(false);
-      return;
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: null, avatar_path: null })
+        .eq("id", user.id);
+
+      setProfile({ ...profile, avatar_url: null, avatar_path: null });
+      alert("Foto entfernt.");
+    } catch (err) {
+      console.error("Fehler beim Entfernen:", err);
+      alert("Fehler beim Entfernen des Fotos");
     }
-
-    setProfile({ ...profile, avatar_url: publicUrl, avatar_path: filePath });
-    setUploading(false);
-    alert("Foto erfolgreich hochgeladen.");
-  } catch (err) {
-    console.error("Unerwarteter Upload-Fehler:", err);
-    alert("Unerwarteter Fehler beim Hochladen");
-    setUploading(false);
-  }
-};
-
-// --- Remove Photo ---
-const handleRemovePhoto = async () => {
-  if (!user || !profile?.avatar_path) return;
-
-  try {
-    // 1) Datei im Storage löschen
-    const { error: removeError } = await supabase.storage
-      .from("profile_pictures")
-      .remove([profile.avatar_path]);
-
-    if (removeError) {
-      console.warn("Fehler beim Entfernen aus Storage:", removeError);
-    }
-
-    // 2) DB-Felder avatar_url & avatar_path auf null setzen
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ avatar_url: null, avatar_path: null })
-      .eq("id", user.id);
-
-    if (updateError) {
-      alert("Fehler beim Entfernen des Fotos: " + updateError.message);
-      return;
-    }
-
-    setProfile({ ...profile, avatar_url: null, avatar_path: null });
-    alert("Foto entfernt.");
-  } catch (err) {
-    console.error("Unerwarteter Fehler beim Entfernen des Fotos:", err);
-    alert("Fehler beim Entfernen des Fotos");
-  }
-};      
+  };
 
   if (loading) return <p style={{ textAlign: "center" }}>Lade...</p>;
   if (!user) return <p style={{ textAlign: "center" }}>Nicht eingeloggt</p>;
 
   return (
-    <div
-      style={{
-        fontFamily: "'Poppins', sans-serif",
-        minHeight: "100vh",
-        backgroundColor: "#f9fafb",
-      }}
-    >
+    <div style={{ fontFamily: "'Poppins', sans-serif", minHeight: "100vh", backgroundColor: "#f9fafb" }}>
       <NavBar />
 
       <div
@@ -277,93 +277,82 @@ const handleRemovePhoto = async () => {
           Willkommen, {profile?.full_name || user?.email}
         </h1>
 
-        {!editing ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "15px", alignItems: "center" }}>
-            {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt="Profilfoto"
-                style={{
-                  width: "120px",
-                  height: "120px",
-                  objectFit: "cover",
-                  borderRadius: "50%",
-                  marginBottom: "10px",
-                }}
-              />
-            ) : (
+        {/* --- Profilfoto + Upload --- */}
+        <div style={{ textAlign: "center", marginBottom: "20px" }}>
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt="Profilfoto"
+              style={{
+                width: "120px",
+                height: "120px",
+                objectFit: "cover",
+                borderRadius: "50%",
+                marginBottom: "10px",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: "120px",
+                height: "120px",
+                borderRadius: "50%",
+                backgroundColor: "#f3f4f6",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#9ca3af",
+                margin: "0 auto 10px",
+              }}
+            >
+              Foto
+            </div>
+          )}
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            disabled={uploading}
+          />
+
+          {uploading && (
+            <div style={{ marginTop: "10px" }}>
               <div
                 style={{
-                  width: "120px",
-                  height: "120px",
-                  borderRadius: "50%",
-                  backgroundColor: "#f3f4f6",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#9ca3af",
-                  marginBottom: "10px",
+                  height: "10px",
+                  width: "100%",
+                  background: "#e5e7eb",
+                  borderRadius: "8px",
+                  overflow: "hidden",
                 }}
               >
-                Foto
-              </div>
-            )}
-
-            <div style={{ width: "100%", textAlign: "left" }}>
-              <p><strong>Name:</strong> {profile?.full_name || "—"}</p>
-              <p><strong>Geburtsdatum:</strong> {profile?.birthdate || "—"}</p>
-              <p><strong>Alter:</strong> {calculateAge(profile?.birthdate)}</p>
-              <p><strong>Wohnort:</strong> {profile?.city || "—"}</p>
-
-              <p style={{ marginTop: 10 }}><strong>Kinder:</strong></p>
-              <ul>
-                {children.length > 0 ? (
-                  children.map((child, i) => (
-                    <li key={child.id || i}>
-                      Kind {i + 1}: {child.age} {child.age === 1 ? "Jahr" : "Jahre"}{" "}
-                      {child.gender === "male" ? "(Junge)" : child.gender === "female" ? "(Mädchen)" : ""}
-                    </li>
-                  ))
-                ) : (
-                  <li>Keine Kinder eingetragen</li>
-                )}
-              </ul>
-            </div>
-
-            <div style={{ width: "100%", display: "flex", gap: "12px", marginTop: 10 }}>
-              <button
-                onClick={() => setEditing(true)}
-                style={{
-                  padding: "12px 20px",
-                  backgroundColor: "#ede9fe",
-                  color: "#4c1d95",
-                  fontWeight: 600,
-                  border: "none",
-                  borderRadius: "12px",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
-              >
-                Profil bearbeiten
-              </button>
-
-              {profile?.avatar_url && (
-                <button
-                  onClick={handleRemovePhoto}
+                <div
                   style={{
-                    padding: "12px 20px",
-                    backgroundColor: "#fecaca",
-                    color: "#7f1d1d",
-                    fontWeight: 600,
-                    border: "none",
-                    borderRadius: "12px",
-                    cursor: "pointer",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                    height: "100%",
+                    width: `${uploadProgress}%`,
+                    background: "#6d28d9",
+                    transition: "width 0.2s ease",
                   }}
-                >
+                />
+              </div>
+              <p style={{ marginTop: "5px" }}>{uploadProgress}%</p>
+            </div>
+          )}
+
+          {profile?.avatar_url && (
+            <button
+              onClick={handleRemovePhoto}
+              style={{
+                marginTop: "10px",
+                backgroundColor: "#fecaca",
+                color: "#7f1d1d",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >           
                   Foto entfernen
                 </button>
               )}
