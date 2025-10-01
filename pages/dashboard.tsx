@@ -159,58 +159,58 @@ try {
 
 // --- Upload Handler ---
 const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-const file = e.target.files?.[0];
-if (!file || !user) return;
+  const file = e.target.files?.[0];
+  if (!file || !user) return;
 
-try {
-setUploading(true);
-const fileExt = file.name.split(".").pop();
-const fileName = ${user.id}.${fileExt};
-const filePath = ${user.id}/${fileName};
+  try {
+    setUploading(true);
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user.id}.${fileExt}`;
+    const filePath = `${user.id}/${fileName}`;
 
-// Datei hochladen  
-const { error: uploadError } = await supabase.storage  
-  .from("profile_pictures")  
-  .upload(filePath, file, { upsert: true });  
+    // Datei hochladen
+    const { error: uploadError } = await supabase.storage
+      .from("profile_pictures")
+      .upload(filePath, file, { upsert: true });
 
-if (uploadError) {  
-  console.error("Upload-Error:", uploadError);  
-  alert("Fehler beim Hochladen des Fotos: " + uploadError.message);  
-  setUploading(false);  
-  return;  
-}  
+    if (uploadError) {
+      console.error("Upload-Error:", uploadError);
+      alert("Fehler beim Hochladen des Fotos: " + uploadError.message);
+      setUploading(false);
+      return;
+    }
 
-// öffentliche URL holen  
-const {  
-  data: { publicUrl },  
-} = supabase.storage.from("profile_pictures").getPublicUrl(filePath);  
+    // öffentliche URL holen
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("profile_pictures").getPublicUrl(filePath);
 
-// in profiles speichern (avatar_url + avatar_path)  
-const { error: updateError } = await supabase  
-  .from("profiles")  
-  .update({  
-    avatar_url: publicUrl,  
-    avatar_path: filePath, // NEU: relativer Pfad für späteres Löschen  
-  })  
-  .eq("id", user.id);  
+    // in profiles speichern (avatar_url + avatar_path)
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        avatar_url: publicUrl,
+        avatar_path: filePath, // relativer Pfad für späteres Löschen
+      })
+      .eq("id", user.id);
 
-if (updateError) {  
-  console.error("DB-Update-Error:", updateError);  
-  alert("Fehler beim Speichern der Bild-URL: " + updateError.message);  
-  setUploading(false);  
-  return;  
-}  
+    if (updateError) {
+      console.error("DB-Update-Error:", updateError);
+      alert("Fehler beim Speichern der Bild-URL: " + updateError.message);
+      setUploading(false);
+      return;
+    }
 
-setProfile({ ...profile, avatar_url: publicUrl, avatar_path: filePath });  
-setUploading(false);  
-alert("Foto erfolgreich hochgeladen.");
-
-} catch (err) {
-console.error("Unerwarteter Upload-Fehler:", err);
-alert("Unerwarteter Fehler beim Hochladen");
-setUploading(false);
-}
+    setProfile({ ...profile, avatar_url: publicUrl, avatar_path: filePath });
+    setUploading(false);
+    alert("Foto erfolgreich hochgeladen.");
+  } catch (err) {
+    console.error("Unerwarteter Upload-Fehler:", err);
+    alert("Unerwarteter Fehler beim Hochladen");
+    setUploading(false);
+  }
 };
+  
 
 // --- Remove Photo ---
 const handleRemovePhoto = async () => {
