@@ -1,4 +1,4 @@
-/// pages/dashboard.tsx
+// pages/dashboard.tsx
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabaseClient";
@@ -25,7 +25,6 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
 
   // Upload-States
   const [uploading, setUploading] = useState(false);
@@ -38,7 +37,6 @@ export default function Dashboard() {
       try {
         const editParam =
           router.query.edit === "1" || router.query.edit === "true";
-        setEditing(editParam);
 
         const {
           data: { session },
@@ -147,7 +145,6 @@ export default function Dashboard() {
 
       alert("Profil gespeichert!");
       setProfile(profileToSave);
-      setEditing(false);
       if (isProfileComplete(profileToSave)) router.push("/main");
     } catch (err) {
       console.error("Fehler beim Speichern:", err);
@@ -352,196 +349,196 @@ export default function Dashboard() {
                 border: "none",
                 cursor: "pointer",
               }}
-            >           
-                  Foto entfernen
+            >
+              Foto entfernen
+            </button>
+          )}
+        </div>
+
+        {/* --- Restliches Formular --- */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 2fr",
+            gap: "15px 20px",
+            alignItems: "center",
+          }}
+        >
+          {/* Name */}
+          <label style={{ fontWeight: 600 }}>Name:</label>
+          <input
+            type="text"
+            value={profile?.full_name || ""}
+            onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+            style={{ padding: "10px", borderRadius: "10px", border: "1px solid #d1d5db" }}
+          />
+
+          {/* Geburtsdatum */}
+          <label style={{ fontWeight: 600 }}>Geburtsdatum:</label>
+          <input
+            type="date"
+            value={profile?.birthdate || ""}
+            onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
+            style={{ padding: "10px", borderRadius: "10px", border: "1px solid #d1d5db" }}
+          />
+
+          {/* Wohnort */}
+          <label style={{ fontWeight: 600 }}>Wohnort:</label>
+          <input
+            type="text"
+            value={profile?.city || ""}
+            onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+            style={{ padding: "10px", borderRadius: "10px", border: "1px solid #d1d5db" }}
+          />
+
+          {/* Profilfoto */}
+          <label style={{ fontWeight: 600 }}>Profilfoto:</label>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {profile?.avatar_url ? (
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <img
+                  src={profile.avatar_url}
+                  alt="Profilfoto"
+                  style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover" }}
+                />
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  style={{
+                    backgroundColor: "#fecaca",
+                    color: "#7f1d1d",
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Bild entfernen
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <p style={{ color: "#6b7280" }}>Noch kein Foto hochgeladen</p>
+            )}
+
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              disabled={uploading}
+              style={{ padding: "8px", borderRadius: "10px", border: "1px solid #d1d5db" }}
+            />
           </div>
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 2fr",
-              gap: "15px 20px",
-              alignItems: "center",
-            }}
-          >
-            {/* Name */}
-            <label style={{ fontWeight: 600 }}>Name:</label>
-            <input
-              type="text"
-              value={profile?.full_name || ""}
-              onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-              style={{ padding: "10px", borderRadius: "10px", border: "1px solid #d1d5db" }}
-            />
 
-            {/* Geburtsdatum */}
-            <label style={{ fontWeight: 600 }}>Geburtsdatum:</label>
-            <input
-              type="date"
-              value={profile?.birthdate || ""}
-              onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
-              style={{ padding: "10px", borderRadius: "10px", border: "1px solid #d1d5db" }}
-            />
-
-            {/* Wohnort */}
-            <label style={{ fontWeight: 600 }}>Wohnort:</label>
-            <input
-              type="text"
-              value={profile?.city || ""}
-              onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-              style={{ padding: "10px", borderRadius: "10px", border: "1px solid #d1d5db" }}
-            />
-
-            {/* Profilfoto */}
-            <label style={{ fontWeight: 600 }}>Profilfoto:</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {profile?.avatar_url ? (
-                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                  <img
-                    src={profile.avatar_url}
-                    alt="Profilfoto"
-                    style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover" }}
+          {/* Kinder */}
+          <label style={{ fontWeight: 600 }}>Kinder:</label>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {children.map((child, i) => (
+              <div key={child.id || i} style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                  <span>Kind {i + 1}:</span>
+                  <input
+                    type="number"
+                    placeholder="z. B. 5"
+                    value={child.age || ""}
+                    onChange={(e) => {
+                      const newChildren = [...children];
+                      newChildren[i] = { ...newChildren[i], age: parseInt(e.target.value || "0") };
+                      setChildren(newChildren);
+                    }}
+                    style={{ padding: "8px", borderRadius: "10px", border: "1px solid #d1d5db", width: "80px" }}
                   />
+
+                  <select
+                    value={child.gender || "none"}
+                    onChange={(e) => {
+                      const newChildren = [...children];
+                      newChildren[i] = { ...newChildren[i], gender: e.target.value };
+                      setChildren(newChildren);
+                    }}
+                    style={{ padding: "8px", borderRadius: "10px", border: "1px solid #d1d5db" }}
+                  >
+                    <option value="none">Keine Angabe</option>
+                    <option value="male">Junge</option>
+                    <option value="female">Mädchen</option>
+                  </select>
+
                   <button
                     type="button"
-                    onClick={handleRemovePhoto}
-                    style={{
-                      backgroundColor: "#fecaca",
-                      color: "#7f1d1d",
-                      padding: "8px 12px",
-                      borderRadius: "8px",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
+                    onClick={() => setChildren(children.filter((_, idx) => idx !== i))}
+                    style={{ padding: "6px 10px", backgroundColor: "#fca5a5", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
                   >
-                    Bild entfernen
+                    ❌
                   </button>
                 </div>
-              ) : (
-                <p style={{ color: "#6b7280" }}>Noch kein Foto hochgeladen</p>
-              )}
+                <small style={{ color: "#6b7280", marginLeft: "6px" }}>Alter und Geschlecht deines Kindes</small>
+              </div>
+            ))}
 
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                disabled={uploading}
-                style={{ padding: "8px", borderRadius: "10px", border: "1px solid #d1d5db" }}
-              />
-            </div>
+            <button
+              type="button"
+              onClick={() => setChildren([...children, { profile_id: user.id, age: 0, gender: "none" }])}
+              style={{ padding: "8px 12px", borderRadius: "10px", backgroundColor: "#e5e7eb", border: "1px solid #e5e7eb", fontSize: "14px", cursor: "pointer", width: "fit-content" }}
+            >
+              ➕ Kind hinzufügen
+            </button>
+          </div>
 
-            {/* Kinder */}
-            <label style={{ fontWeight: 600 }}>Kinder:</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {children.map((child, i) => (
-                <div key={child.id || i} style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-                    <span>Kind {i + 1}:</span>
-                    <input
-                      type="number"
-                      placeholder="z. B. 5"
-                      value={child.age || ""}
-                      onChange={(e) => {
-                        const newChildren = [...children];
-                        newChildren[i] = { ...newChildren[i], age: parseInt(e.target.value || "0") };
-                        setChildren(newChildren);
-                      }}
-                      style={{ padding: "8px", borderRadius: "10px", border: "1px solid #d1d5db", width: "80px" }}
-                    />
-
-                    <select
-                      value={child.gender || "none"}
-                      onChange={(e) => {
-                        const newChildren = [...children];
-                        newChildren[i] = { ...newChildren[i], gender: e.target.value };
-                        setChildren(newChildren);
-                      }}
-                      style={{ padding: "8px", borderRadius: "10px", border: "1px solid #d1d5db" }}
-                    >
-                      <option value="none">Keine Angabe</option>
-                      <option value="male">Junge</option>
-                      <option value="female">Mädchen</option>
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => setChildren(children.filter((_, idx) => idx !== i))}
-                      style={{ padding: "6px 10px", backgroundColor: "#fca5a5", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
-                    >
-                      ❌
-                    </button>
-                  </div>
-                  <small style={{ color: "#6b7280", marginLeft: "6px" }}>Alter und Geschlecht deines Kindes</small>
-                </div>
-              ))}
-
-              <button
-                type="button"
-                onClick={() => setChildren([...children, { profile_id: user.id, age: 0, gender: "none" }])}
-                style={{ padding: "8px 12px", borderRadius: "10px", backgroundColor: "#e5e7eb", border: "1px solid #e5e7eb", fontSize: "14px", cursor: "pointer", width: "fit-content" }}
-              >
-                ➕ Kind hinzufügen
-              </button>
-            </div>
-
-            {/* Buttons */}
-            <div></div>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button
-                onClick={handleSave}
-                style={{
-                  padding: "12px 20px",
-                  backgroundColor: "#ede9fe",
-                  color: "#4c1d95",
-                  fontWeight: 600,
-                  border: "none",
-                  borderRadius: "12px",
-                  flex: 1,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
-              >
-                Speichern
-              </button>
-
-              <button
-                onClick={() => router.push("/main")}
-                style={{
-                  padding: "10px 18px",
-                  backgroundColor: "#fecaca",
-                  color: "#7f1d1d",
-                  border: "none",
-                  borderRadius: "12px",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                Abbrechen
-              </button>
-            </div>
-
-            {/* Account löschen */}
-            <div
+          {/* Buttons */}
+          <div></div>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              onClick={handleSave}
               style={{
-                gridColumn: "1 / span 2",
-                marginTop: "30px",
-                borderTop: "1px solid #e5e7eb",
-                paddingTop: "20px",
+                padding: "12px 20px",
+                backgroundColor: "#ede9fe",
+                color: "#4c1d95",
+                fontWeight: 600,
+                border: "none",
+                borderRadius: "12px",
+                flex: 1,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
+            >
+              Speichern
+            </button>
+
+            <button
+              onClick={() => router.push("/main")}
+              style={{
+                padding: "10px 18px",
+                backgroundColor: "#fecaca",
+                color: "#7f1d1d",
+                border: "none",
+                borderRadius: "12px",
+                cursor: "pointer",
+                fontWeight: 600,
               }}
             >
-              <h3 style={{ color: "#b91c1c", marginBottom: "10px" }}>⚠️ Account löschen</h3>
-              <p style={{ color: "#555", marginBottom: "15px" }}>
-                Wenn du dein Profil und deinen Account löschst, werden alle deine Daten unwiderruflich entfernt.
-              </p>
-              <button
-                onClick={async () => {
-                  const confirmed = window.confirm(
-                    "Bist du sicher, dass du dein Konto endgültig löschen möchtest?\n\nDieser Vorgang kann NICHT rückgängig gemacht werden!"
+              Abbrechen
+            </button>
+          </div>
+
+          {/* Account löschen */}
+          <div
+            style={{
+              gridColumn: "1 / span 2",
+              marginTop: "30px",
+              borderTop: "1px solid #e5e7eb",
+              paddingTop: "20px",
+            }}
+          >
+            <h3 style={{ color: "#b91c1c", marginBottom: "10px" }}>⚠️ Account löschen</h3>
+            <p style={{ color: "#555", marginBottom: "15px" }}>
+              Wenn du dein Profil und deinen Account löschst, werden alle deine Daten unwiderruflich entfernt.
+            </p>
+            <button
+              onClick={async () => {
+                const confirmed = window.confirm(
+                  "Bist du sicher, dass du dein Konto endgültig löschen möchtest?\n\nDieser Vorgang kann NICHT rückgängig gemacht werden!"
                   );
                   if (!confirmed) return;
 
