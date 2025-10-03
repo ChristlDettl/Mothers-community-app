@@ -421,7 +421,7 @@ backgroundColor: "#f9fafb",
           onChange={(e) => setProfile({ ...profile, city: e.target.value })}  
           style={{ padding: "10px", borderRadius: "10px", border: "1px solid #d1d5db" }}  
         />  
-
+        
         {/* Profilfoto */}  
 <label style={{ fontWeight: 600 }}>Profilfoto:</label>  
 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>  
@@ -457,26 +457,35 @@ backgroundColor: "#f9fafb",
     type="file"  
     accept="image/*"  
     onChange={handleFileUpload}  
-    disabled={uploading}  
+    disabled={!!profile?.avatar_url || uploading}   // 👈 deaktiviert, wenn Bild vorhanden oder Upload läuft  
     style={{ display: "none" }}  
   />  
 
   <button  
     type="button"  
     onClick={() => document.getElementById("fileInput")?.click()}  
-    disabled={uploading}  
+    disabled={!!profile?.avatar_url || uploading}   // 👈 auch hier deaktivieren  
     style={{  
       padding: "8px 12px",  
       borderRadius: "10px",  
-      backgroundColor: uploading ? "#ddd6fe" : "#ede9fe",  
+      backgroundColor: !!profile?.avatar_url ? "#f3f4f6" : uploading ? "#ddd6fe" : "#ede9fe",  
       border: "1px solid #d1d5db",  
       fontSize: "14px",  
-      cursor: uploading ? "not-allowed" : "pointer",  
+      cursor: !!profile?.avatar_url ? "not-allowed" : uploading ? "wait" : "pointer",  
       width: "fit-content",  
+      color: !!profile?.avatar_url ? "#9ca3af" : "#000",  
+      fontWeight: 600,  
     }}  
   >  
     {uploading ? "Hochladen..." : "📤 Bild auswählen & hochladen"}  
   </button>  
+
+  {/* Hinweis, wenn Bild existiert */}  
+  {profile?.avatar_url && (  
+    <p style={{ fontSize: "0.9em", color: "#6b7280" }}>  
+      Du kannst nur ein Foto hochladen. Bitte lösche zuerst dein aktuelles Bild, um ein neues hochzuladen.  
+    </p>  
+  )}  
 
   {/* Fortschrittsanzeige */}  
   {uploading && (  
