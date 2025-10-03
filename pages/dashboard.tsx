@@ -27,7 +27,8 @@ const [children, setChildren] = useState<any[]>([]);
 const [loading, setLoading] = useState(true);
 const [editing, setEditing] = useState(false);
 const [uploading, setUploading] = useState(false);
-
+const [uploadProgress, setUploadProgress] = useState(0);
+  
 useEffect(() => {
 if (!router.isReady) return;
 
