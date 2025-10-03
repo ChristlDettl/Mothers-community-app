@@ -410,43 +410,67 @@ backgroundColor: "#f9fafb",
         />  
 
         {/* Profilfoto */}  
-        <label style={{ fontWeight: 600 }}>Profilfoto:</label>  
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>  
-          {profile?.avatar_url ? (  
-            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>  
-              <img  
-                src={profile.avatar_url}  
-                alt="Profilfoto"  
-                style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover" }}  
-              />  
-              <button  
-                type="button"  
-                onClick={handleRemovePhoto}  
-                style={{  
-                  backgroundColor: "#fecaca",  
-                  color: "#7f1d1d",  
-                  padding: "8px 12px",  
-                  borderRadius: "8px",  
-                  border: "none",  
-                  cursor: "pointer",  
-                }}  
-              >  
-                Bild entfernen  
-              </button>  
-            </div>  
-          ) : (  
-            <p style={{ color: "#6b7280" }}>Noch kein Foto hochgeladen</p>  
-          )}  
+<label style={{ fontWeight: 600 }}>Profilfoto:</label>  
+<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>  
+  {profile?.avatar_url ? (  
+    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>  
+      <img  
+        src={profile.avatar_url}  
+        alt="Profilfoto"  
+        style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover" }}  
+      />  
+      <button  
+        type="button"  
+        onClick={handleRemovePhoto}  
+        style={{  
+          backgroundColor: "#fecaca",  
+          color: "#7f1d1d",  
+          padding: "8px 12px",  
+          borderRadius: "8px",  
+          border: "none",  
+          cursor: "pointer",  
+        }}  
+      >  
+        Bild entfernen  
+      </button>  
+    </div>  
+  ) : (  
+    <p style={{ color: "#6b7280" }}>Noch kein Foto hochgeladen</p>  
+  )}  
 
-          <input  
-            type="file"  
-            accept="image/*"  
-            onChange={handleFileUpload}  
-            disabled={uploading}  
-            style={{ padding: "8px", borderRadius: "10px", border: "1px solid #d1d5db" }}  
-          />  
-        </div>  
+  {/* Upload-Button + verstecktes Input */}  
+  <input  
+    id="fileInput"  
+    type="file"  
+    accept="image/*"  
+    onChange={handleFileUpload}  
+    disabled={uploading}  
+    style={{ display: "none" }}  
+  />  
 
+  <button  
+    type="button"  
+    onClick={() => document.getElementById("fileInput")?.click()}  
+    disabled={uploading}  
+    style={{  
+      padding: "8px 12px",  
+      borderRadius: "10px",  
+      backgroundColor: uploading ? "#ddd6fe" : "#ede9fe",  
+      border: "1px solid #d1d5db",  
+      fontSize: "14px",  
+      cursor: uploading ? "not-allowed" : "pointer",  
+      width: "fit-content",  
+    }}  
+  >  
+    {uploading ? "Hochladen..." : "📤 Bild auswählen & hochladen"}  
+  </button>  
+
+  {/* Fortschrittsanzeige */}  
+  {uploading && (  
+    <progress value={uploadProgress} max="100" style={{ width: "100%" }}></progress>  
+  )}  
+</div>
+        
         {/* Kinder */}  
         <label style={{ fontWeight: 600 }}>Kinder:</label>  
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>  
