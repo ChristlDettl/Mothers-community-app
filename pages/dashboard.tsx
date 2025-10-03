@@ -157,13 +157,22 @@ try {
 
 };
 
-// --- Upload Handler ---
-const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file || !user) return;
 
   try {
     setUploading(true);
+    setUploadProgress(0); // <-- NEU
+
+    // Fake-Progress simulieren, da Supabase keine Events liefert
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 10;
+      setUploadProgress(progress);
+      if (progress >= 90) clearInterval(interval);
+    }, 300);
+
     const fileExt = file.name.split(".").pop();
     const fileName = `${user.id}.${fileExt}`;
     const filePath = `${user.id}/${fileName}`;
@@ -172,6 +181,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { error: uploadError } = await supabase.storage
       .from("profile_pictures")
       .upload(filePath, file, { upsert: true });
+
+    clearInterval(interval); // <-- NEU, Stoppe die Simulation nach Upload
 
     if (uploadError) {
       console.error("Upload-Error:", uploadError);
@@ -185,12 +196,12 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       data: { publicUrl },
     } = supabase.storage.from("profile_pictures").getPublicUrl(filePath);
 
-    // in profiles speichern (avatar_url + avatar_path)
+    // in profiles speichern
     const { error: updateError } = await supabase
       .from("profiles")
       .update({
         avatar_url: publicUrl,
-        avatar_path: filePath, // relativer Pfad für späteres Löschen
+        avatar_path: filePath,
       })
       .eq("id", user.id);
 
@@ -202,7 +213,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     }
 
     setProfile({ ...profile, avatar_url: publicUrl, avatar_path: filePath });
-    setUploading(false);
+    setUploadProgress(100); // <-- NEU, Balken voll machen
+    setTimeout(() => setUploading(false), 500); // <-- NEU, nach 0,5s Balken wieder ausblenden
     alert("Foto erfolgreich hochgeladen.");
   } catch (err) {
     console.error("Unerwarteter Upload-Fehler:", err);
