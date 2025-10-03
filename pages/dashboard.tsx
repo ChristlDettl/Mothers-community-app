@@ -192,11 +192,10 @@ try {
       return;
     }
 
+    
     // öffentliche URL holen
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("profile_pictures").getPublicUrl(filePath);
-    const publicUrl = `${data.publicUrl}?t=${Date.now()}`;
+const { data } = supabase.storage.from("profile_pictures").getPublicUrl(filePath);
+const publicUrl = `${data.publicUrl}?t=${Date.now()}`;
 
     // in profiles speichern
     const { error: updateError } = await supabase
