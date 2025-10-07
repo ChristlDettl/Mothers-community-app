@@ -80,55 +80,75 @@ export default function Main() {
         >
           Willkommen in deiner Community-Hauptseite!
         </p>
-
         <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "15px",
-            alignItems: "center",
-          }}
-        >
-          <button
-            onClick={() => router.push("/dashboard?edit=1")}
-            style={{
-              padding: "12px 22px",
-              backgroundColor: "#ede9fe", // zartes Pastellviolett
-              color: "#4c1d95", // dunkler Violettton
-              border: "none",
-              borderRadius: "12px",
-              cursor: "pointer",
-              fontWeight: 600,
-              width: "100%",
-              maxWidth: "280px",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
-          >
-            Profil bearbeiten
-          </button>
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: "15px",
+    alignItems: "center",
+  }}
+>
+  <button
+    onClick={() => router.push("/dashboard?edit=1")}
+    style={{
+      padding: "12px 22px",
+      backgroundColor: "#ede9fe",
+      color: "#4c1d95",
+      border: "none",
+      borderRadius: "12px",
+      cursor: "pointer",
+      fontWeight: 600,
+      width: "100%",
+      maxWidth: "280px",
+      transition: "all 0.2s ease",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
+    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
+  >
+    Profil bearbeiten
+  </button>
 
-          <button
-            onClick={() => router.push("/profiles")}
-            style={{
-              padding: "12px 22px",
-              backgroundColor: "#fecaca", // Pastellrosa
-              color: "#7f1d1d", // dunkler Rotbraun
-              border: "none",
-              borderRadius: "12px",
-              cursor: "pointer",
-              fontWeight: 600,
-              width: "100%",
-              maxWidth: "280px",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fca5a5")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fecaca")}
-          >
-            Alle Mütter anzeigen
-          </button>
-        </div>
+  <button
+    onClick={() => router.push("/profiles")}
+    style={{
+      padding: "12px 22px",
+      backgroundColor: "#fecaca",
+      color: "#7f1d1d",
+      border: "none",
+      borderRadius: "12px",
+      cursor: "pointer",
+      fontWeight: 600,
+      width: "100%",
+      maxWidth: "280px",
+      transition: "all 0.2s ease",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fca5a5")}
+    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fecaca")}
+  >
+    Alle Mütter anzeigen
+  </button>
+
+  {/* 🔒 Neuer Button zum Passwort ändern */}
+  <button
+    onClick={() => router.push("/change-password")}
+    style={{
+      padding: "12px 22px",
+      backgroundColor: "#dbeafe", // sanftes Hellblau
+      color: "#1e3a8a", // kräftiges Blau
+      border: "none",
+      borderRadius: "12px",
+      cursor: "pointer",
+      fontWeight: 600,
+      width: "100%",
+      maxWidth: "280px",
+      transition: "all 0.2s ease",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#bfdbfe")}
+    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#dbeafe")}
+  >
+    🔒 Passwort ändern
+  </button>
+</div>
       </div>
     </div>
   );
