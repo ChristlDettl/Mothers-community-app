@@ -89,7 +89,7 @@ export default function Main() {
   }}
 >
   <button
-    onClick={() => router.push("/dashboard?edit=1")}
+    onClick={() => router.push("/profiles")}
     style={{
       padding: "12px 22px",
       backgroundColor: "#ede9fe",
@@ -105,11 +105,11 @@ export default function Main() {
     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
   >
-    Profil bearbeiten
+    Alle Mütter anzeigen
   </button>
 
   <button
-    onClick={() => router.push("/profiles")}
+    onClick={() => router.push("/dashboard?edit=1")}
     style={{
       padding: "12px 22px",
       backgroundColor: "#fecaca",
@@ -125,7 +125,7 @@ export default function Main() {
     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fca5a5")}
     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fecaca")}
   >
-    Alle Mütter anzeigen
+    Profil bearbeiten
   </button>
 
   {/* 🔒 Neuer Button zum Passwort ändern */}
