@@ -5,7 +5,6 @@ import NavBar from "../components/NavBar";
 import { useRouter } from "next/router";
 import { RealtimePostgresInsertPayload } from "@supabase/supabase-js";
 
-// Typen für Supabase
 type MessageRow = {
   id: string;
   sender_id: string;
@@ -13,12 +12,6 @@ type MessageRow = {
   content: string;
   created_at: string;
   read_at: string | null;
-};
-
-type MessageInsert = {
-  sender_id: string;
-  receiver_id: string;
-  content: string;
 };
 
 export default function Messages() {
@@ -32,100 +25,124 @@ export default function Messages() {
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
-
-  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
-  const [presenceChannel, setPresenceChannel] = useState<any>(null);
-
+  const [conversations, setConversations] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Scroll nach unten bei neuen Nachrichten
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Auto-Scroll immer, wenn sich die Nachrichtenliste ändert
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Eigene Profildaten laden
+  // Nutzer laden
   useEffect(() => {
-    const fetchProfiles = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const userId = session?.user?.id;
-        if (!userId) return;
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) {
+        router.push("/login");
+        return;
+      }
 
-        const { data: me } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", userId)
-          .single();
-        setUserProfile(me);
+      const { data: me } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
 
-        if (receiver_id) {
-          const { data: receiver } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", receiver_id)
-            .single();
-          setReceiverProfile(receiver);
+      setUserProfile(me);
+    };
+    fetchUser();
+  }, [router]);
+
+  // Wenn kein Empfänger gewählt ist → Konversationsliste anzeigen
+  useEffect(() => {
+    const fetchConversations = async () => {
+      if (!userProfile) return;
+
+      const { data: msgs } = await supabase
+        .from("messages")
+        .select("*")
+        .or(`sender_id.eq.${userProfile.id},receiver_id.eq.${userProfile.id}`)
+        .order("created_at", { ascending: false });
+
+      if (!msgs) return;
+
+      const partnerMap: Record<string, any> = {};
+      for (const msg of msgs) {
+        const partnerId =
+          msg.sender_id === userProfile.id ? msg.receiver_id : msg.sender_id;
+        if (!partnerMap[partnerId]) {
+          partnerMap[partnerId] = msg;
         }
-      } catch (err) {
-        console.error("Fehler beim Laden der Profile:", err);
+      }
+
+      const partnerIds = Object.keys(partnerMap);
+      if (partnerIds.length > 0) {
+        const { data: partners } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url")
+          .in("id", partnerIds);
+
+        const convos = partnerIds.map((id) => ({
+          partner: partners?.find((p) => p.id === id),
+          lastMessage: partnerMap[id],
+        }));
+
+        setConversations(convos);
       }
     };
 
-    fetchProfiles();
-  }, [receiver_id]);
-
-  // Nachrichten laden
-  useEffect(() => {
-    const fetchMessages = async () => {
-      if (!userProfile || !receiver_id) return;
-      setLoading(true);
-      try {
-        const { data: msgs } = await supabase
-          .from("messages")
-          .select("*")
-          .or(
-            `and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id})`
-          )
-          .order("created_at", { ascending: true });
-
-        setMessages(msgs || []);
-      } catch (err) {
-        console.error("Fehler beim Laden der Nachrichten:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMessages();
+    if (!receiver_id) fetchConversations();
   }, [userProfile, receiver_id]);
 
-  // Realtime-Subscription (neue Nachrichten + Updates wie read_at)
+  // Empfängerprofil + Nachrichten laden
+  useEffect(() => {
+    const fetchChat = async () => {
+      if (!receiver_id || !userProfile) return;
+      setLoading(true);
+
+      const { data: receiver } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", receiver_id)
+        .single();
+      setReceiverProfile(receiver);
+
+      const { data: msgs } = await supabase
+        .from("messages")
+        .select("*")
+        .or(
+          `and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id})`
+        )
+        .order("created_at", { ascending: true });
+
+      setMessages(msgs || []);
+      setLoading(false);
+    };
+
+    fetchChat();
+  }, [userProfile, receiver_id]);
+
+  // Realtime-Aktualisierung
   useEffect(() => {
     if (!userProfile || !receiver_id) return;
 
     const channel = supabase
-      .channel("messages-realtime")
+      .channel("realtime-messages")
       .on<MessageRow>(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
           schema: "public",
           table: "messages",
           filter: `or(and(sender_id.eq.${userProfile.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${userProfile.id}))`,
         },
         (payload: RealtimePostgresInsertPayload<MessageRow>) => {
-          const newMsg = payload.new;
-          setMessages((prev) => {
-            const exists = prev.find((m) => m.id === newMsg.id);
-            if (exists) {
-              return prev.map((m) => (m.id === newMsg.id ? newMsg : m));
-            }
-            return [...prev, newMsg];
-          });
+          setMessages((prev) => [...prev, payload.new]);
         }
       )
       .subscribe();
@@ -135,207 +152,240 @@ export default function Messages() {
     };
   }, [userProfile, receiver_id]);
 
-  // Presence (Online-/Offline + Typing)
-  useEffect(() => {
-    if (!userProfile) return;
-
-    const channel = supabase.channel("chat-presence", {
-      config: { presence: { key: userProfile.id } },
-    });
-
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState();
-        setOnlineUsers(Object.values(state).flat());
-      })
-      .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          await channel.track({
-            user_id: userProfile.id,
-            full_name: userProfile.full_name,
-            status: "online",
-          });
-        }
-      });
-
-    setPresenceChannel(channel);
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userProfile]);
-
-  // Ungelesene Nachrichten als "gelesen" markieren
-  useEffect(() => {
-    if (!userProfile || !receiver_id || messages.length === 0) return;
-
-    const unread = messages.filter(
-      (m) => m.receiver_id === userProfile.id && !m.read_at
-    );
-
-    if (unread.length > 0) {
-      const ids = unread.map((m) => m.id);
-      supabase
-        .from("messages")
-        .update({ read_at: new Date().toISOString() })
-        .in("id", ids)
-        .then(({ error }) => {
-          if (error) {
-            console.error("Fehler beim Aktualisieren der Lesebestätigung:", error);
-          }
-        });
-    }
-  }, [messages, userProfile, receiver_id]);
-
   // Nachricht senden
   const sendMessage = async () => {
     if (!newMessage.trim() || !userProfile || !receiver_id) return;
 
-    try {
-      const { data, error } = await supabase
-        .from("messages")
-        .insert([
-          {
-            sender_id: userProfile.id,
-            receiver_id,
-            content: newMessage.trim(),
-          },
-        ])
-        .select();
+    const { data, error } = await supabase
+      .from("messages")
+      .insert([
+        {
+          sender_id: userProfile.id,
+          receiver_id,
+          content: newMessage.trim(),
+        },
+      ])
+      .select();
 
-      if (error) {
-        console.error("Fehler beim Senden der Nachricht:", error);
-      }
-
-      if (data && data.length > 0) {
-        setMessages((prev) => [...prev, data[0]]);
-      }
-
+    if (!error && data) {
+      setMessages((prev) => [...prev, data[0]]);
       setNewMessage("");
-
-      if (presenceChannel) {
-        presenceChannel.track({
-          user_id: userProfile.id,
-          full_name: userProfile.full_name,
-          status: "online",
-        });
-      }
-    } catch (err) {
-      console.error("Fehler beim Senden der Nachricht:", err);
     }
   };
 
-  // Tipp-Status setzen
-  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewMessage(e.target.value);
-
-    if (presenceChannel) {
-      presenceChannel.track({
-        user_id: userProfile.id,
-        full_name: userProfile.full_name,
-        status: e.target.value ? "typing" : "online",
-      });
-    }
-  };
-
-  const isReceiverOnline = onlineUsers.some((u) => u.user_id === receiver_id);
-  const isTyping = onlineUsers.some(
-    (u) => u.user_id === receiver_id && u.status === "typing"
-  );
-
-  if (loading) return <p style={{ textAlign: "center" }}>Lade Nachrichten...</p>;
-
-  return (
-    <div style={{ fontFamily: "Arial, sans-serif", background: "#f7f8fa", minHeight: "100vh" }}>
-      <NavBar />
-      <div style={{ maxWidth: "700px", margin: "40px auto", padding: "20px" }}>
-        <h1 style={{ textAlign: "center", marginBottom: "10px" }}>
-          {receiverProfile ? `Chat mit ${receiverProfile.full_name}` : "Inbox"}
-        </h1>
-        {receiverProfile && (
-          <p style={{ textAlign: "center", color: isReceiverOnline ? "green" : "gray" }}>
-            {isReceiverOnline ? "Online" : "Offline"}
-          </p>
-        )}
-        {isTyping && (
-          <p style={{ textAlign: "center", color: "#666", fontStyle: "italic" }}>
-            {receiverProfile?.full_name} tippt gerade...
-          </p>
-        )}
-
-        {/* Nachrichtenbereich */}
+  // Wenn keine Chat-Partner-ID gegeben → Übersicht anzeigen
+  if (!receiver_id) {
+    return (
+      <div
+        style={{
+          fontFamily: "'Poppins', sans-serif",
+          backgroundColor: "#f9fafb",
+          minHeight: "100vh",
+        }}
+      >
+        <NavBar />
         <div
           style={{
-            marginBottom: "20px",
-            maxHeight: "60vh",
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column",
+            maxWidth: "700px",
+            margin: "40px auto",
+            padding: "20px",
+            background: "#fff",
+            borderRadius: "16px",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
           }}
         >
-          {messages.length === 0 && <p style={{ textAlign: "center" }}>Keine Nachrichten.</p>}
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              style={{
-                backgroundColor: msg.sender_id === userProfile?.id ? "#ede9fe" : "#fff",
-                padding: "10px 15px",
-                borderRadius: "12px",
-                marginBottom: "10px",
-                alignSelf: msg.sender_id === userProfile?.id ? "flex-end" : "flex-start",
-                maxWidth: "80%",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-              }}
-            >
-              <p style={{ margin: 0 }}>{msg.content}</p>
-              <small style={{ color: "#666" }}>
-                {new Date(msg.created_at).toLocaleString()}
-                {msg.sender_id === userProfile?.id && (
-                  <span
+          <h2 style={{ textAlign: "center", marginBottom: "20px", color: "#4c1d95" }}>
+            Meine Nachrichten
+          </h2>
+          {conversations.length === 0 ? (
+            <p style={{ textAlign: "center" }}>Keine Nachrichten gefunden.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {conversations.map((c) => (
+                <div
+                  key={c.partner?.id}
+                  onClick={() =>
+                    router.push(`/messages?receiver_id=${c.partner?.id}`)
+                  }
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "15px",
+                    padding: "10px",
+                    borderRadius: "12px",
+                    cursor: "pointer",
+                    backgroundColor: "#f3f4f6",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#ede9fe")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#f3f4f6")
+                  }
+                >
+                  <img
+                    src={
+                      c.partner?.avatar_url
+                        ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${c.partner.avatar_url}`
+                        : "/default-avatar.png"
+                    }
+                    alt="Profil"
                     style={{
-                      marginLeft: 8,
-                      color: msg.read_at ? "green" : "#aaa",
-                      fontWeight: 600,
+                      width: "45px",
+                      height: "45px",
+                      borderRadius: "50%",
+                      objectFit: "cover",
                     }}
-                  >
-                    {msg.read_at ? "✓ Gelesen" : "✓ Gesendet"}
-                  </span>
-                )}
-              </small>
+                  />
+                  <div>
+                    <p
+                      style={{
+                        fontWeight: 600,
+                        color: "#111827",
+                        marginBottom: 4,
+                      }}
+                    >
+                      {c.partner?.full_name}
+                    </p>
+                    <p
+                      style={{
+                        color: "#6b7280",
+                        fontSize: "0.9rem",
+                        margin: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        maxWidth: "250px",
+                      }}
+                    >
+                      {c.lastMessage?.content}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-          <div ref={messagesEndRef} />
+          )}
         </div>
+      </div>
+    );
+  }
 
-        {/* Neue Nachricht */}
-        {receiverProfile && (
-          <div style={{ display: "flex", gap: "10px" }}>
-            <input
-              type="text"
-              placeholder="Nachricht schreiben..."
-              value={newMessage}
-              onChange={handleTyping}
-              style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            />
-            <button
-              onClick={sendMessage}
+  // Einzelchat anzeigen
+  return (
+    <div
+      style={{
+        fontFamily: "'Poppins', sans-serif",
+        backgroundColor: "#f9fafb",
+        minHeight: "100vh",
+      }}
+    >
+      <NavBar />
+      <div
+        style={{
+          maxWidth: "700px",
+          margin: "40px auto",
+          padding: "20px",
+          background: "#fff",
+          borderRadius: "16px",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+        }}
+      >
+        <button
+          onClick={() => router.push("/messages")}
+          style={{
+            marginBottom: "10px",
+            background: "none",
+            border: "none",
+            color: "#6d28d9",
+            cursor: "pointer",
+            fontWeight: 600,
+          }}
+        >
+          ← Zurück zur Übersicht
+        </button>
+
+        <h2 style={{ textAlign: "center", color: "#4c1d95" }}>
+          Chat mit {receiverProfile?.full_name}
+        </h2>
+
+        {loading ? (
+          <p style={{ textAlign: "center" }}>Lade Nachrichten...</p>
+        ) : (
+          <>
+            <div
               style={{
-                padding: "10px 18px",
-                backgroundColor: "#4c1d95",
-                color: "#fff",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontWeight: 600,
+                maxHeight: "60vh",
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                padding: "10px 0",
               }}
             >
-              Senden
-            </button>
-          </div>
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  style={{
+                    alignSelf:
+                      msg.sender_id === userProfile?.id
+                        ? "flex-end"
+                        : "flex-start",
+                    backgroundColor:
+                      msg.sender_id === userProfile?.id
+                        ? "#ede9fe"
+                        : "#f3f4f6",
+                    padding: "10px 15px",
+                    borderRadius: "12px",
+                    maxWidth: "75%",
+                  }}
+                >
+                  <p style={{ margin: 0 }}>{msg.content}</p>
+                  <small style={{ color: "#6b7280" }}>
+                    {new Date(msg.created_at).toLocaleTimeString()}
+                  </small>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+              <input
+                type="text"
+                placeholder="Nachricht schreiben..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                }}
+              />
+              <button
+                onClick={sendMessage}
+                style={{
+                  padding: "10px 18px",
+                  backgroundColor: "#4c1d95",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                Senden
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
   );
-        }
+                         }
 
+
+
+
+          
