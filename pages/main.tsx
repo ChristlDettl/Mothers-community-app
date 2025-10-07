@@ -88,6 +88,8 @@ export default function Main() {
     alignItems: "center",
   }}
 >
+
+          {/* 💕 Alle Mütter anzeigen */}
   <button
     onClick={() => router.push("/profiles")}
     style={{
@@ -108,8 +110,9 @@ export default function Main() {
     Alle Mütter anzeigen
   </button>
 
+          {/* 💬 Meine Nachrichten */}
   <button
-    onClick={() => router.push("/dashboard?edit=1")}
+    onClick={() => router.push("/messages")}
     style={{
       padding: "12px 22px",
       backgroundColor: "#fecaca",
@@ -125,16 +128,37 @@ export default function Main() {
     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fca5a5")}
     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fecaca")}
   >
+    💬 Meine Nachrichten 
+  </button>
+
+            {/* 🟣 Profil bearbeiten */}
+  <button
+    onClick={() => router.push("/dashboard?edit=1")}
+    style={{
+      padding: "12px 22px",
+      backgroundColor: "#bbf7d0", // sanftes Pastellgrün
+      color: "#065f46", // dunkles Smaragdgrün
+      border: "none",
+      borderRadius: "12px",
+      cursor: "pointer",
+      fontWeight: 600,
+      width: "100%",
+      maxWidth: "280px",
+      transition: "all 0.2s ease",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#86efac")}
+    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#bbf7d0")}
+  >
     Profil bearbeiten
   </button>
 
-  {/* 🔒 Neuer Button zum Passwort ändern */}
+  {/* 🔒 Passwort ändern */}
   <button
     onClick={() => router.push("/change-password")}
     style={{
       padding: "12px 22px",
-      backgroundColor: "#dbeafe", // sanftes Hellblau
-      color: "#1e3a8a", // kräftiges Blau
+      backgroundColor: "#dbeafe",
+      color: "#1e3a8a",
       border: "none",
       borderRadius: "12px",
       cursor: "pointer",
