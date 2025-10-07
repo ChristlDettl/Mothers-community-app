@@ -115,6 +115,27 @@ export default function Main() {
     onClick={() => router.push("/messages")}
     style={{
       padding: "12px 22px",
+      backgroundColor: "#ede9fe",
+      color: "#4c1d95",
+      border: "none",
+      borderRadius: "12px",
+      cursor: "pointer",
+      fontWeight: 600,
+      width: "100%",
+      maxWidth: "280px",
+      transition: "all 0.2s ease",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
+    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
+  >
+    💬 Meine Nachrichten 
+  </button>
+
+            {/* 🟣 Profil bearbeiten */}
+  <button
+    onClick={() => router.push("/dashboard?edit=1")}
+    style={{
+      padding: "12px 22px",
       backgroundColor: "#fecaca",
       color: "#7f1d1d",
       border: "none",
@@ -128,27 +149,6 @@ export default function Main() {
     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fca5a5")}
     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fecaca")}
   >
-    💬 Meine Nachrichten 
-  </button>
-
-            {/* 🟣 Profil bearbeiten */}
-  <button
-    onClick={() => router.push("/dashboard?edit=1")}
-    style={{
-      padding: "12px 22px",
-      backgroundColor: "#bbf7d0", // sanftes Pastellgrün
-      color: "#065f46", // dunkles Smaragdgrün
-      border: "none",
-      borderRadius: "12px",
-      cursor: "pointer",
-      fontWeight: 600,
-      width: "100%",
-      maxWidth: "280px",
-      transition: "all 0.2s ease",
-    }}
-    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#86efac")}
-    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#bbf7d0")}
-  >
     Profil bearbeiten
   </button>
 
@@ -157,8 +157,8 @@ export default function Main() {
     onClick={() => router.push("/change-password")}
     style={{
       padding: "12px 22px",
-      backgroundColor: "#dbeafe",
-      color: "#1e3a8a",
+      backgroundColor: "#fecaca",
+      color: "#7f1d1d",
       border: "none",
       borderRadius: "12px",
       cursor: "pointer",
@@ -167,8 +167,8 @@ export default function Main() {
       maxWidth: "280px",
       transition: "all 0.2s ease",
     }}
-    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#bfdbfe")}
-    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#dbeafe")}
+    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fca5a5")}
+    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fecaca")}
   >
     🔒 Passwort ändern
   </button>
