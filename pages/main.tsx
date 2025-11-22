@@ -131,6 +131,26 @@ export default function Main() {
     💬 Meine Nachrichten 
   </button>
 
+  <button
+  onClick={() => router.push("/events")}
+  style={{
+      padding: "12px 22px",
+      backgroundColor: "#ede9fe",
+      color: "#4c1d95",
+      border: "none",
+      borderRadius: "12px",
+      cursor: "pointer",
+      fontWeight: 600,
+      width: "100%",
+      maxWidth: "280px",
+      transition: "all 0.2s ease",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ddd6fe")}
+    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ede9fe")}
+  >
+  Veranstaltungen
+</button>
+
             {/* 🟣 Profil bearbeiten */}
   <button
     onClick={() => router.push("/dashboard?edit=1")}
@@ -152,25 +172,7 @@ export default function Main() {
     Profil bearbeiten
   </button>
 
-  <button
-  onClick={() => router.push("/events")}
-  style={{
-    padding: "12px 22px",
-    backgroundColor: "#fecaca",
-      color: "#7f1d1d",
-      border: "none",
-      borderRadius: "12px",
-      cursor: "pointer",
-      fontWeight: 600,
-      width: "100%",
-      maxWidth: "280px",
-      transition: "all 0.2s ease",
-    }}
-    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fca5a5")}
-    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fecaca")}
-  >
-  Veranstaltungen
-</button>
+  
 
   {/* 🔒 Passwort ändern */}
   <button
